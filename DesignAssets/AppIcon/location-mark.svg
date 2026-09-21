@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="1024"
+     height="1024"
+     viewBox="0 0 1024 1024"
+     fill="none">
+  <defs>
+    <linearGradient id="orange-gradient"
+                    x1="238.933"
+                    y1="102.4"
+                    x2="755.2"
+                    y2="930.133"
+                    gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF8C42"/>
+      <stop offset="1" stop-color="#F4511E"/>
+    </linearGradient>
+  </defs>
+  <path id="location-mark"
+        fill="url(#orange-gradient)"
+        fill-rule="evenodd"
+        clip-rule="evenodd"
+        d="M512 98.133
+           C288 98.133 121.6 264.533 121.6 479.147
+           C121.6 715.52 356.267 878.08 512 998.4
+           C667.733 878.08 902.4 715.52 902.4 479.147
+           C902.4 264.533 736 98.133 512 98.133
+           Z
+           M512 298.667
+           C405.333 298.667 318.72 385.28 318.72 491.947
+           C318.72 598.613 405.333 685.227 512 685.227
+           C618.667 685.227 705.28 598.613 705.28 491.947
+           C705.28 385.28 618.667 298.667 512 298.667
+           Z"/>
+</svg>
