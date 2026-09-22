@@ -7,10 +7,10 @@ struct RootView: View {
     @State private var tab = 0
     var body: some View {
         TabView(selection: $tab) {
-            NavigationStack { TodayView() }.tabItem { Label("今日", systemImage: "sun.horizon") }.tag(0)
-            NavigationStack { PlacesView() }.tabItem { Label("地点", systemImage: "map") }.tag(1)
-            NavigationStack { ReviewView() }.tabItem { Label("回顾", systemImage: "chart.bar.xaxis") }.tag(2)
-            NavigationStack { SettingsView() }.tabItem { Label("设置", systemImage: "slider.horizontal.3") }.tag(3)
+            NavigationStack { TodayView().undoNotice() }.tabItem { Label("今日", systemImage: "sun.horizon") }.tag(0)
+            NavigationStack { PlacesView().undoNotice() }.tabItem { Label("地点", systemImage: "map") }.tag(1)
+            NavigationStack { ReviewView().undoNotice() }.tabItem { Label("回顾", systemImage: "chart.bar.xaxis") }.tag(2)
+            NavigationStack { SettingsView().undoNotice() }.tabItem { Label("设置", systemImage: "slider.horizontal.3") }.tag(3)
         }
         .sensoryFeedback(.selection, trigger: tab)
         .safeAreaInset(edge: .top, spacing: 0) {

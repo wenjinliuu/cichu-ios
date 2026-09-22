@@ -17,10 +17,24 @@ import Foundation
     var authorized: Bool { authorization == .authorizedAlways || authorization == .authorizedWhenInUse }
     var statusTitle: String {
         if store.isDemo { return "示例模式" }
-        if !enabled { return "自动记录已暂停" }
-        if authorization == .authorizedAlways { return "自动记录已开启" }
-        if authorization == .authorizedWhenInUse { return "仅使用期间定位" }
-        return "等待定位授权"
+        if authorization == .denied || authorization == .restricted { return "定位权限受限" }
+        if enabled && !authorized { return "等待定位授权" }
+        if enabled && statusMessage != nil { return "定位暂不可用" }
+        if enabled && gate.candidate != nil { return "正在确认位置" }
+        if let active = store.active { return active.kind == .stay ? "停留中" : "移动中" }
+        if !enabled { return "记录已暂停" }
+        return "等待识别地点"
+    }
+    var statusDetail: String {
+        if store.isDemo { return "示例记录，不使用实际定位。" }
+        if authorization == .denied || authorization == .restricted { return "允许位置权限后可继续自动记录，仍可手动补记。" }
+        if let statusMessage { return statusMessage }
+        if enabled, let candidate = gate.candidate {
+            return candidate.placeID.flatMap { store.place($0)?.name }.map { "正在确认是否到达\($0)，确认前保留上一段记录。" } ?? "正在确认是否离开，确认前保留上一段记录。"
+        }
+        if !enabled { return store.active == nil ? "暂停期间不计时，随时可以继续。" : "当前为手动记录，自动识别已暂停。" }
+        if authorization == .authorizedWhenInUse { return "仅使用期间定位；后台记录需要始终允许。" }
+        return "地点变化后自动更新。"
     }
 
     init(store: JournalStore, defaults: UserDefaults = .standard) {

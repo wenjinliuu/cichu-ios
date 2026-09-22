@@ -18,6 +18,8 @@ enum JournalError: LocalizedError {
     private(set) var places: [Place] = []
     private(set) var entries: [JournalEntry] = []
     var errorMessage: String?
+    private(set) var undoLabel: String?
+    private var undoSnapshot: [EntrySnapshot]?
     let context: ModelContext
     let isDemo: Bool
     var active: JournalEntry? { entries.first { $0.end == nil } }
@@ -35,13 +37,13 @@ enum JournalError: LocalizedError {
         } catch { errorMessage = "读取记录失败：\(error.localizedDescription)" }
     }
     @discardableResult func commit() -> Bool {
-        do { try context.save(); reload(); return true }
+        do { try context.save(); undoLabel = nil; undoSnapshot = nil; reload(); return true }
         catch { context.rollback(); reload(); errorMessage = "保存失败：\(error.localizedDescription)"; return false }
     }
     func place(_ id: UUID?) -> Place? { places.first { $0.id == id } }
     func title(_ entry: JournalEntry) -> String {
         let origin = place(entry.placeID)?.name ?? "未命名地点"
-        return entry.kind == .stay ? origin : "\(origin) → \(place(entry.destinationID)?.name ?? "移动中")"
+        return entry.kind == .stay ? origin : "\(origin) → \(place(entry.destinationID)?.name ?? (entry.end == nil ? "移动中" : "终点未记录"))"
     }
     func entries(in interval: DateInterval, now: Date = .now) -> [JournalEntry] {
         entries.filter { $0.duration(in: interval, now: now) > 0 }.sorted { $0.start < $1.start }
@@ -98,14 +100,18 @@ enum JournalError: LocalizedError {
         guard !entries.contains(where: { $0.id != existing?.id && $0.start < end && ($0.end ?? .distantFuture) > start }) else {
             errorMessage = JournalError.overlap.localizedDescription; return false
         }
+        let before = existing?.end == nil && existing != nil ? nil : snapshot()
         let entry = existing ?? JournalEntry(kind: .stay, placeID: place.id, start: start, end: end, source: .manual)
         if existing == nil { context.insert(entry) }
         entry.placeID = place.id; entry.start = start; entry.end = end
         entry.kindRaw = kind.rawValue; entry.destinationID = kind == .travel ? destination?.id : nil
         entry.note = note; entry.sourceRaw = EntrySource.manual.rawValue
-        return commit()
+        return commitUndo(before, label: existing == nil ? "已补记" : "已修改记录")
     }
-    func delete(_ entry: JournalEntry) { context.delete(entry); commit() }
+    func delete(_ entry: JournalEntry) {
+        let before = entry.end == nil ? nil : snapshot()
+        context.delete(entry); _ = commitUndo(before, label: "已删除记录")
+    }
     func erase() { entries.forEach { context.delete($0) }; places.forEach { context.delete($0) }; commit() }
 }
 
@@ -122,9 +128,10 @@ extension JournalStore {
         guard let end = entry.end, entry.kind == .stay, date > entry.start, date < end else {
             errorMessage = "只能在已结束停留的内部拆分。"; return false
         }
+        let before = snapshot()
         entry.end = date; entry.sourceRaw = EntrySource.manual.rawValue
         context.insert(JournalEntry(kind: .stay, placeID: entry.placeID, start: date, end: end, source: .manual, note: entry.note))
-        return commit()
+        return commitUndo(before, label: "已拆分记录")
     }
     func mergeNext(_ entry: JournalEntry) -> Bool {
         let ordered = entries.sorted { $0.start < $1.start }
@@ -135,12 +142,64 @@ extension JournalStore {
               next.end != nil, abs(next.start.timeIntervalSince(end)) < 1 else {
             errorMessage = "只支持合并时间连续、地点相同的已结束停留，不会补算空白时间。"; return false
         }
+        let before = snapshot()
         entry.end = next.end; entry.sourceRaw = EntrySource.manual.rawValue
         entry.note = [entry.note, next.note].filter { !$0.isEmpty }.joined(separator: "\n")
-        context.delete(next); return commit()
+        context.delete(next); return commitUndo(before, label: "已合并记录")
     }
     func confirm(_ entry: JournalEntry) {
         // Explicit user verification turns the record into a manually reviewed record.
         entry.sourceRaw = EntrySource.manual.rawValue; commit()
+    }
+}
+
+
+private struct EntrySnapshot {
+    let id: UUID
+    let kind: EntryKind
+    let placeID: UUID?
+    let destinationID: UUID?
+    let start: Date
+    let end: Date?
+    let source: EntrySource
+    let note: String
+    init(_ entry: JournalEntry) {
+        id = entry.id; kind = entry.kind; placeID = entry.placeID; destinationID = entry.destinationID
+        start = entry.start; end = entry.end; source = entry.source; note = entry.note
+    }
+}
+
+extension JournalStore {
+    private func snapshot() -> [EntrySnapshot] { entries.map(EntrySnapshot.init) }
+    @discardableResult private func commitUndo(_ before: [EntrySnapshot]?, label: String) -> Bool {
+        guard commit() else { return false }
+        undoSnapshot = before; undoLabel = before == nil ? nil : label
+        return true
+    }
+    /// Only one step, invalidated by any later successful mutation, including location events.
+    func undoLastEdit() {
+        guard let before = undoSnapshot else { return }
+        let ids = Set(before.map(\.id))
+        let existing = Dictionary(uniqueKeysWithValues: entries.map { ($0.id, $0) })
+        for entry in entries where !ids.contains(entry.id) { context.delete(entry) }
+        for record in before {
+            let entry = existing[record.id] ?? JournalEntry(id: record.id, kind: record.kind, placeID: record.placeID, start: record.start, source: record.source)
+            if existing[record.id] == nil { context.insert(entry) }
+            entry.kindRaw = record.kind.rawValue; entry.placeID = record.placeID; entry.destinationID = record.destinationID
+            entry.start = record.start; entry.end = record.end; entry.sourceRaw = record.source.rawValue; entry.note = record.note
+        }
+        commit()
+    }
+    func dismissUndo() { undoLabel = nil; undoSnapshot = nil }
+    func visitedPlaces(in interval: DateInterval) -> [Place] {
+        var durations: [UUID: TimeInterval] = [:]
+        for entry in entries where entry.kind == .stay {
+            guard let id = entry.placeID else { continue }
+            durations[id, default: 0] += entry.duration(in: interval)
+        }
+        return places.filter { (durations[$0.id] ?? 0) > 0 }.sorted {
+            let a = durations[$0.id] ?? 0, b = durations[$1.id] ?? 0
+            return a == b ? $0.createdAt < $1.createdAt : a > b
+        }
     }
 }

@@ -11,12 +11,12 @@ struct EntryEditor: View {
     @State private var note: String
     @State private var kind: EntryKind
     @State private var destinationID: UUID?
-    init(date: Date = .now, existing: JournalEntry? = nil) {
+    init(date: Date = .now, existing: JournalEntry? = nil, suggestedRange: DateInterval? = nil) {
         self.existing = existing
         let end = min(Calendar.current.date(bySettingHour: 18, minute: 0, second: 0, of: date) ?? date, .now)
         _placeID = State(initialValue: existing?.placeID)
-        _start = State(initialValue: existing?.start ?? end.addingTimeInterval(-3600))
-        _end = State(initialValue: existing?.end ?? end)
+        _start = State(initialValue: existing?.start ?? suggestedRange?.start ?? end.addingTimeInterval(-3600))
+        _end = State(initialValue: existing?.end ?? suggestedRange?.end ?? end)
         _note = State(initialValue: existing?.note ?? "")
         _kind = State(initialValue: existing?.kind ?? .stay)
         _destinationID = State(initialValue: existing?.destinationID)
@@ -106,6 +106,7 @@ struct EntryDetailView: View {
                 if entry.kind == .travel { Text("移动表示两次地点事件之间的时间，并非连续 GPS 轨迹。暂停前尚未到达的移动记录不会参与路线均值统计。").font(.footnote).foregroundStyle(.secondary) }
                 Button("删除记录", role: .destructive) { delete = true }
             }.navigationTitle("记录详情").navigationBarTitleDisplayMode(.inline)
+                .undoNotice()
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
                 .sheet(isPresented: $splitting) {
                     NavigationStack {

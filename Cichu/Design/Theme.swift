@@ -122,3 +122,24 @@ struct PrimaryButtonStyle: ButtonStyle {
             .animation(reduceMotion ? nil : Motion.press, value: configuration.isPressed)
     }
 }
+
+
+private struct UndoNotice: View {
+    @Environment(JournalStore.self) private var store
+    var body: some View {
+        if let label = store.undoLabel {
+            HStack(spacing: 12) {
+                Text(label).font(.subheadline)
+                Spacer(minLength: 8)
+                Button("撤销") { store.undoLastEdit() }.font(.subheadline.weight(.semibold)).frame(minHeight: 44)
+                Button { store.dismissUndo() } label: {
+                    Image(systemName: "xmark").frame(width: 44, height: 44)
+                }.accessibilityLabel("关闭撤销提示")
+            }.padding(.leading, 20).background(Theme.surface)
+        }
+    }
+}
+
+extension View {
+    func undoNotice() -> some View { safeAreaInset(edge: .bottom, spacing: 0) { UndoNotice() } }
+}

@@ -65,4 +65,49 @@ import SwiftData
         XCTAssertFalse(store.mergeNext(entry))
         XCTAssertEqual(store.entries.count, 2)
     }
+    func testUndoDeleteAndInvalidateAfterNewMutation() throws {
+        let (container, store) = try makeStore()
+        let home = Place(name: "家", kind: .home, latitude: 31, longitude: 121)
+        container.mainContext.insert(home); store.commit()
+        let start = Date.now.addingTimeInterval(-7200)
+        XCTAssertTrue(store.saveEntry(existing: nil, place: home, start: start, end: start.addingTimeInterval(600), note: "保留备注"))
+        let original = try XCTUnwrap(store.entries.first)
+        let id = original.id
+        store.delete(original)
+        XCTAssertEqual(store.entries.count, 0)
+        XCTAssertNotNil(store.undoLabel)
+        store.undoLastEdit()
+        XCTAssertEqual(store.entries.first?.id, id)
+        XCTAssertEqual(store.entries.first?.note, "保留备注")
+        XCTAssertNil(store.undoLabel)
+        store.delete(try XCTUnwrap(store.entries.first))
+        store.arrive(home)
+        XCTAssertNil(store.undoLabel)
+        store.undoLastEdit()
+        XCTAssertEqual(store.entries.count, 1)
+        XCTAssertNotNil(store.active)
+    }
+    func testUndoMergeRestoresBothRecords() throws {
+        let (container, store) = try makeStore()
+        let home = Place(name: "家", kind: .home, latitude: 31, longitude: 121)
+        container.mainContext.insert(home); store.commit()
+        let start = Date.now.addingTimeInterval(-7200)
+        XCTAssertTrue(store.saveEntry(existing: nil, place: home, start: start, end: start.addingTimeInterval(600), note: "一"))
+        XCTAssertTrue(store.saveEntry(existing: nil, place: home, start: start.addingTimeInterval(600), end: start.addingTimeInterval(1200), note: "二"))
+        let first = try XCTUnwrap(store.entries.last)
+        XCTAssertTrue(store.mergeNext(first))
+        store.undoLastEdit()
+        XCTAssertEqual(store.entries.count, 2)
+        XCTAssertEqual(Set(store.entries.map(\.note)), Set(["一", "二"]))
+    }
+    func testVisitedPlacesIncludesArchivedHistoryButHidesUnvisited() throws {
+        let (container, store) = try makeStore()
+        let home = Place(name: "家", kind: .home, latitude: 31, longitude: 121)
+        let office = Place(name: "公司", kind: .work, latitude: 32, longitude: 121)
+        container.mainContext.insert(home); container.mainContext.insert(office); store.commit()
+        let start = Date.now.addingTimeInterval(-7200)
+        XCTAssertTrue(store.saveEntry(existing: nil, place: home, start: start, end: start.addingTimeInterval(600), note: ""))
+        store.archive(home)
+        XCTAssertEqual(store.visitedPlaces(in: DateInterval(start: start, duration: 1200)).map(\.id), [home.id])
+    }
 }
