@@ -31,7 +31,11 @@ for folder, refs, builds in [('Cichu',source_refs,source_builds),('CichuTests',t
         refs.append(ref)
         builds.append(add('build:'+rel,'PBXBuildFile',fileRef=ref))
 resources=[]
-for rel, typ in [('Cichu/Resources/Assets.xcassets','folder.assetcatalog'),('Cichu/Resources/PrivacyInfo.xcprivacy','text.xml')]:
+for rel, typ in [
+    ('Cichu/Resources/Assets.xcassets','folder.assetcatalog'),
+    ('Cichu/Resources/AppIcon.icon','folder.iconcomposer.icon'),
+    ('Cichu/Resources/PrivacyInfo.xcprivacy','text.xml'),
+]:
     ref=add('file:'+rel,'PBXFileReference',lastKnownFileType=typ,path=rel,sourceTree='<group>')
     source_refs.append(ref)
     resources.append(add('build:'+rel,'PBXBuildFile',fileRef=ref))
@@ -48,7 +52,7 @@ def phase(key, isa, files):
 app_phases=[phase('app-sources','PBXSourcesBuildPhase',source_builds),phase('app-frameworks','PBXFrameworksBuildPhase',[]),phase('app-resources','PBXResourcesBuildPhase',resources)]
 test_phases=[phase('test-sources','PBXSourcesBuildPhase',test_builds),phase('test-frameworks','PBXFrameworksBuildPhase',[]),phase('test-resources','PBXResourcesBuildPhase',[])]
 project_configs=config_list('project',{'SDKROOT':'iphoneos','IPHONEOS_DEPLOYMENT_TARGET':'17.0','SWIFT_VERSION':'5.0','CLANG_ENABLE_MODULES':'YES','CLANG_ENABLE_OBJC_ARC':'YES','DEBUG_INFORMATION_FORMAT':'dwarf-with-dsym','SWIFT_STRICT_CONCURRENCY':'targeted'})
-app_configs=config_list('app',{'PRODUCT_BUNDLE_IDENTIFIER':'com.wenjinliu.cichu','DEVELOPMENT_TEAM':'F6FB339Y3Z','PRODUCT_NAME':'$(TARGET_NAME)','INFOPLIST_FILE':'Cichu/Resources/Info.plist','GENERATE_INFOPLIST_FILE':'NO','TARGETED_DEVICE_FAMILY':'1,2','SUPPORTED_PLATFORMS':'iphoneos iphonesimulator','CODE_SIGN_STYLE':'Automatic','CURRENT_PROJECT_VERSION':'1','MARKETING_VERSION':'1.0','ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME':'AccentColor','LD_RUNPATH_SEARCH_PATHS':['$(inherited)','@executable_path/Frameworks']})
+app_configs=config_list('app',{'PRODUCT_BUNDLE_IDENTIFIER':'com.wenjinliu.cichu','DEVELOPMENT_TEAM':'F6FB339Y3Z','PRODUCT_NAME':'$(TARGET_NAME)','INFOPLIST_FILE':'Cichu/Resources/Info.plist','GENERATE_INFOPLIST_FILE':'NO','TARGETED_DEVICE_FAMILY':'1,2','SUPPORTED_PLATFORMS':'iphoneos iphonesimulator','CODE_SIGN_STYLE':'Automatic','CURRENT_PROJECT_VERSION':'1','MARKETING_VERSION':'1.0','ASSETCATALOG_COMPILER_APPICON_NAME':'AppIcon','ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME':'AccentColor','LD_RUNPATH_SEARCH_PATHS':['$(inherited)','@executable_path/Frameworks']})
 test_configs=config_list('tests',{'PRODUCT_BUNDLE_IDENTIFIER':'com.wenjinliu.cichu.tests','DEVELOPMENT_TEAM':'F6FB339Y3Z','PRODUCT_NAME':'$(TARGET_NAME)','GENERATE_INFOPLIST_FILE':'YES','TARGETED_DEVICE_FAMILY':'1,2','CODE_SIGN_STYLE':'Automatic','TEST_HOST':'$(BUILT_PRODUCTS_DIR)/Cichu.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Cichu','BUNDLE_LOADER':'$(TEST_HOST)','LD_RUNPATH_SEARCH_PATHS':['$(inherited)','@executable_path/Frameworks','@loader_path/Frameworks']})
 app_target=add('app-target','PBXNativeTarget',buildConfigurationList=app_configs,buildPhases=app_phases,buildRules=[],dependencies=[],name='Cichu',productName='Cichu',productReference=app_product,productType='com.apple.product-type.application')
 proxy=add('test-proxy','PBXContainerItemProxy',containerPortal=oid('project'),proxyType=1,remoteGlobalIDString=app_target,remoteInfo='Cichu')

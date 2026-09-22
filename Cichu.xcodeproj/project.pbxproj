@@ -235,6 +235,16 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "3DA388B13109E4229A87245D";
 		};
+		"6BCA6AABA2230AA46C47F53D" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "folder.iconcomposer.icon";
+			"path" = "Cichu/Resources/AppIcon.icon";
+			"sourceTree" = "<group>";
+		};
+		"21ECB7B2D9199454345296D3" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "6BCA6AABA2230AA46C47F53D";
+		};
 		"2917995C32910C03BF8CCA3D" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "text.xml";
@@ -297,6 +307,7 @@
 				"C7F4996086F0A493ECFB0AF4",
 				"C66EF76CB70F2D5AF8D4DF36",
 				"3DA388B13109E4229A87245D",
+				"6BCA6AABA2230AA46C47F53D",
 				"2917995C32910C03BF8CCA3D",
 				"59BD0A3FF43B32849B319E64",
 			);
@@ -360,6 +371,7 @@
 			"buildActionMask" = 2147483647;
 			"files" = (
 				"7AB18A3B30721CF77D139AF7",
+				"21ECB7B2D9199454345296D3",
 				"B6DA5E37720393EC6155C85B",
 			);
 			"runOnlyForDeploymentPostprocessing" = 0;
@@ -440,6 +452,7 @@
 				"CODE_SIGN_STYLE" = "Automatic";
 				"CURRENT_PROJECT_VERSION" = "1";
 				"MARKETING_VERSION" = "1.0";
+				"ASSETCATALOG_COMPILER_APPICON_NAME" = "AppIcon";
 				"ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME" = "AccentColor";
 				"LD_RUNPATH_SEARCH_PATHS" = (
 					"$(inherited)",
@@ -464,6 +477,7 @@
 				"CODE_SIGN_STYLE" = "Automatic";
 				"CURRENT_PROJECT_VERSION" = "1";
 				"MARKETING_VERSION" = "1.0";
+				"ASSETCATALOG_COMPILER_APPICON_NAME" = "AppIcon";
 				"ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME" = "AccentColor";
 				"LD_RUNPATH_SEARCH_PATHS" = (
 					"$(inherited)",
