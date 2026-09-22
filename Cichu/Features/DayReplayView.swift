@@ -40,7 +40,7 @@ struct DayReplayView: View {
                                 Button(playing ? "暂停" : "播放", systemImage: playing ? "pause.fill" : "play.fill") {
                                     if index == entries.count - 1 { index = 0; focus() }
                                     playing.toggle()
-                                }.buttonStyle(.borderedProminent)
+                                }.buttonStyle(PrimaryButtonStyle())
                                 Spacer()
                                 Button("下一段", systemImage: "forward.end.fill") { index = min(entries.count - 1, index + 1); focus() }.disabled(index >= entries.count - 1)
                             }.labelStyle(.iconOnly).controlSize(.large)
@@ -66,7 +66,7 @@ struct DayReplayView: View {
     }
     private func focus() {
         guard let entry = current, let place = store.place(entry.placeID) else { return }
-        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.6)) {
+        withAnimation(reduceMotion ? nil : Motion.expand) {
             if entry.kind == .travel, let destination = store.place(entry.destinationID) {
                 let center = CLLocationCoordinate2D(latitude: (place.latitude + destination.latitude) / 2, longitude: (place.longitude + destination.longitude) / 2)
                 camera = .region(.init(center: center, span: .init(latitudeDelta: max(0.015, abs(place.latitude - destination.latitude) * 1.8), longitudeDelta: max(0.015, abs(place.longitude - destination.longitude) * 1.8))))

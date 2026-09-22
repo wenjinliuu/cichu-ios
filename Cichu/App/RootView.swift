@@ -34,20 +34,20 @@ struct WelcomeView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
-                Image(systemName: "location.circle.fill").font(.system(size: 76)).foregroundStyle(Theme.accent).padding(.top, 44)
-                Text("此处").font(.headline).foregroundStyle(.secondary)
+                BrandMark().frame(width: 64, height: 64).padding(.top, 32)
+                Text("此处").font(.title3.weight(.medium))
                 Text("看见时间，\n留在哪里。").font(.system(.largeTitle, design: .rounded).bold())
-                Text("生活不只有目的地。\n把每一次停留，慢慢积成自己的时间地图。")
-                    .font(.title3).foregroundStyle(.secondary).lineSpacing(6)
-                Card {
-                    VStack(alignment: .leading, spacing: 22) {
+                Text("把每一次停留，记成自己的时间地图。")
+                    .font(.body).foregroundStyle(Theme.quiet).lineSpacing(6)
+                Group {
+                    VStack(alignment: .leading, spacing: 20) {
                         Label("自动感知常用地点的到达与离开", systemImage: "mappin.and.ellipse")
                         Label("看懂停留、通勤与长期生活变化", systemImage: "clock.arrow.circlepath")
                         Label("无需账号，记录保存在本机", systemImage: "lock.shield")
                     }.font(.subheadline)
                 }
                 Button { setup = true } label: { Text("开始我的记录").frame(maxWidth: .infinity).padding(12) }
-                    .buttonStyle(.borderedProminent).controlSize(.large)
+                    .buttonStyle(PrimaryButtonStyle()).controlSize(.large)
                 Button("先看看示例") { demo = true }.frame(maxWidth: .infinity, minHeight: 44)
                 Text("添加地点后再选择是否开启定位。你也可以始终手动记录。")
                     .font(.footnote).foregroundStyle(.secondary)

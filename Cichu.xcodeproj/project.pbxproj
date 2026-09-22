@@ -25,6 +25,16 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "92856BDFFC1068E0FF9B55FB";
 		};
+		"68BD7B696A572036605DB973" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Cichu/Design/DesignPreviews.swift";
+			"sourceTree" = "<group>";
+		};
+		"3C6D392398D79156B841B050" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "68BD7B696A572036605DB973";
+		};
 		"EC14891DAA572BFC7EE1511F" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -269,6 +279,7 @@
 			"children" = (
 				"12C5857CFF0DA095AFE5160D",
 				"92856BDFFC1068E0FF9B55FB",
+				"68BD7B696A572036605DB973",
 				"EC14891DAA572BFC7EE1511F",
 				"4833056B834387CDD0469FCF",
 				"825FFD940DF9E4E610D23F7F",
@@ -317,6 +328,7 @@
 			"files" = (
 				"EF1C30A78D69A4CC414706E7",
 				"105601659D0EC9ACF8C3DF2E",
+				"3C6D392398D79156B841B050",
 				"41B927342AE2321B75EBE5D9",
 				"3C2F0BFBC2010A49F72092A5",
 				"C987D23C3974D3EFF194F563",

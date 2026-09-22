@@ -1,74 +1,95 @@
 import SwiftUI
 import MapKit
 
+private enum MapSheet: Identifiable {
+    case add
+    case detail(Place)
+    var id: String {
+        switch self { case .add: "add"; case .detail(let place): place.id.uuidString }
+    }
+}
+
 struct PlacesView: View {
     @Environment(JournalStore.self) private var store
     @Environment(LocationService.self) private var location
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var camera: MapCameraPosition = .automatic
-    @State private var selected: Place?
-    @State private var adding = false
+    @State private var sheet: MapSheet?
+    @State private var focusedID: UUID?
     @State private var satellite = false
     var body: some View {
         Map(position: $camera) {
             UserAnnotation()
             ForEach(store.visiblePlaces) { place in
                 Annotation(place.name, coordinate: place.coordinate) {
-                    Button { selected = place } label: {
-                        PlaceBadge(kind: place.kind).padding(5).background(Theme.surface, in: Circle())
-                            .overlay(Circle().stroke(Theme.color(place.kind).opacity(0.35), lineWidth: 2))
-                    }.accessibilityLabel("查看\(place.name)")
+                    Button { select(place) } label: {
+                        Image(systemName: place.kind.symbol).font(.body.weight(.medium))
+                            .foregroundStyle(focusedID == place.id ? Theme.accent : Theme.ink)
+                            .frame(width: 44, height: 44).background(Theme.surface, in: Circle())
+                            .overlay(Circle().stroke(focusedID == place.id ? Theme.accent : Theme.quiet.opacity(0.25), lineWidth: 1))
+                            .scaleEffect(focusedID == place.id && !reduceMotion ? 1.08 : 1)
+                    }.buttonStyle(PressStyle()).accessibilityLabel("查看\(place.name)")
                 }
-                MapCircle(center: place.coordinate, radius: place.radius).foregroundStyle(Theme.color(place.kind).opacity(0.1))
+                if focusedID == place.id {
+                    MapCircle(center: place.coordinate, radius: place.radius).foregroundStyle(Theme.accent.opacity(0.1))
+                }
             }
         }
         .mapStyle(satellite ? .hybrid(elevation: .realistic) : .standard(elevation: .flat, pointsOfInterest: .excludingAll))
         .mapControls { MapCompass(); MapScaleView() }
-        .safeAreaInset(edge: .top) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("我的地点").font(.largeTitle.bold())
-                    Text("生活发生的地方").font(.subheadline).foregroundStyle(.secondary)
-                }.padding(18).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24))
-                Spacer()
-                Button { adding = true } label: { Image(systemName: "plus").font(.title2).frame(width: 52, height: 52).background(.regularMaterial, in: Circle()) }
-                    .accessibilityLabel("添加地点")
-            }.padding(16)
+        .navigationTitle("地点").navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { sheet = .add } label: { Image(systemName: "plus").frame(width: 44, height: 44) }.accessibilityLabel("添加地点")
+            }
         }
-        .safeAreaInset(edge: .bottom) {
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(alignment: .trailing, spacing: 12) {
-                HStack {
-                    Spacer()
-                    Button { satellite.toggle() } label: { Image(systemName: "square.3.layers.3d").frame(width: 48, height: 48) }
-                        .background(.regularMaterial, in: Circle()).accessibilityLabel("切换地图样式")
+                HStack(spacing: 0) {
+                    Button { satellite.toggle() } label: { Image(systemName: "square.3.layers.3d").frame(width: 48, height: 48) }.accessibilityLabel("切换地图样式")
+                    Divider().frame(height: 20)
                     Button {
                         location.locateOnce()
-                        camera = .userLocation(fallback: .automatic)
-                    } label: { Image(systemName: "location.fill").frame(width: 48, height: 48) }
-                        .background(.regularMaterial, in: Circle()).accessibilityLabel("定位到我")
-                }.padding(.horizontal)
+                        withAnimation(reduceMotion ? nil : Motion.expand) { camera = .userLocation(fallback: .automatic) }
+                    } label: { Image(systemName: "location").frame(width: 48, height: 48) }.accessibilityLabel("定位到我")
+                }.background(.regularMaterial, in: Capsule()).padding(.horizontal, 20)
                 if store.visiblePlaces.isEmpty {
-                    Button("在地图上添加第一个地点", systemImage: "plus.circle.fill") { adding = true }
-                        .padding(20).frame(maxWidth: .infinity).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24)).padding()
+                    Button("添加第一个地点", systemImage: "plus") { sheet = .add }
+                        .buttonStyle(PrimaryButtonStyle()).controlSize(.large).padding(20)
                 } else {
                     ScrollView(.horizontal) {
                         HStack(spacing: 12) {
                             ForEach(store.visiblePlaces) { place in
-                                Button {
-                                    camera = .region(MKCoordinateRegion(center: place.coordinate, latitudinalMeters: 1800, longitudinalMeters: 1800))
-                                    selected = place
-                                } label: {
-                                    PlaceTile(place: place, duration: store.total(in: TimeMath.day(.now), kind: .stay, placeID: place.id))
-                                        .frame(width: 170).background(Theme.surface, in: RoundedRectangle(cornerRadius: 24))
+                                Button { select(place) } label: {
+                                    Label(place.name, systemImage: place.kind.symbol).font(.subheadline.weight(.medium))
+                                        .padding(.horizontal, 16).frame(minHeight: 44)
+                                        .foregroundStyle(focusedID == place.id ? Theme.accent : Theme.ink)
+                                        .background(focusedID == place.id ? Theme.highlight : Theme.surface, in: Capsule())
                                 }.buttonStyle(PressStyle())
                             }
-                        }.padding(16)
-                    }.scrollIndicators(.hidden).background(.ultraThinMaterial)
+                        }.padding(.horizontal, 20).padding(.vertical, 12)
+                    }.scrollIndicators(.hidden).background(.regularMaterial)
                 }
             }
         }
-        .toolbar(.hidden, for: .navigationBar)
-        .sheet(isPresented: $adding) { PlaceEditor() }
-        .sheet(item: $selected) { place in NavigationStack { PlaceDetailView(place: place).toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { selected = nil } } } } }
+        .sheet(item: $sheet) { destination in
+            switch destination {
+            case .add: PlaceEditor()
+            case .detail(let place):
+                NavigationStack {
+                    PlaceDetailView(place: place).toolbar {
+                        ToolbarItem(placement: .confirmationAction) { Button("完成") { sheet = nil } }
+                    }
+                }.presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
+            }
+        }
+    }
+    private func select(_ place: Place) {
+        withAnimation(reduceMotion ? nil : Motion.expand) {
+            focusedID = place.id
+            camera = .region(.init(center: place.coordinate, latitudinalMeters: 1800, longitudinalMeters: 1800))
+        }
+        sheet = .detail(place)
     }
 }
 
@@ -196,45 +217,57 @@ struct PlaceDetailView: View {
     private var visits: [JournalEntry] { store.entries.filter { $0.kind == .stay && $0.placeID == place.id } }
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                Map { Marker(place.name, systemImage: place.kind.symbol, coordinate: place.coordinate).tint(Theme.color(place.kind)) }
-                    .frame(height: 230).clipShape(RoundedRectangle(cornerRadius: 28))
-                HStack { PlaceBadge(kind: place.kind); PageHeading(eyebrow: "地点记忆", title: place.name) }
-                if !place.address.isEmpty { Text(place.address).font(.subheadline).foregroundStyle(.secondary) }
-                Card {
-                    VStack(spacing: 24) {
-                        HStack {
-                            Metric(title: "累计停留", value: TimeMath.duration(visits.reduce(0) { $0 + max(0, ($1.end ?? .now).timeIntervalSince($1.start)) }))
-                            Metric(title: "到访次数", value: "\(visits.count) 次")
-                        }
-                        HStack {
-                            Metric(title: "第一次到访", value: visits.last?.start.formatted(date: .abbreviated, time: .omitted) ?? "尚未到访")
-                            Metric(title: "最近到访", value: visits.first?.start.formatted(date: .abbreviated, time: .omitted) ?? "尚未到访")
-                        }
+            VStack(alignment: .leading, spacing: 28) {
+                HStack(spacing: 14) {
+                    PlaceBadge(kind: place.kind)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(place.kind.title).font(.headline)
+                        if !place.address.isEmpty { Text(place.address).font(.subheadline).foregroundStyle(Theme.quiet) }
                     }
+                }
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 24) { primaryMetrics }
+                    VStack(alignment: .leading, spacing: 20) { primaryMetrics }
                 }
                 if !place.archived {
-                    Button("我现在在这里", systemImage: "record.circle") { store.arrive(place, source: .manual) }
-                        .buttonStyle(.borderedProminent).controlSize(.large)
+                    Button(store.active?.placeID == place.id && store.active?.kind == .stay ? "正在这里记录" : "我现在在这里", systemImage: "record.circle") {
+                        store.arrive(place, source: .manual)
+                    }.buttonStyle(PrimaryButtonStyle()).controlSize(.large)
+                        .disabled(store.active?.placeID == place.id && store.active?.kind == .stay)
                 }
-                Text("最近的停留").font(.title2.bold())
+                Map { Marker(place.name, systemImage: place.kind.symbol, coordinate: place.coordinate).tint(Theme.accent) }
+                    .frame(height: 180).clipShape(RoundedRectangle(cornerRadius: 20))
+                VStack(alignment: .leading, spacing: 14) {
+                    LabeledContent("第一次到访", value: visits.last?.start.formatted(date: .abbreviated, time: .omitted) ?? "尚未到访")
+                    LabeledContent("最近到访", value: visits.first?.start.formatted(date: .abbreviated, time: .omitted) ?? "尚未到访")
+                }.font(.subheadline).foregroundStyle(Theme.quiet)
+                Text("最近停留").font(.headline)
                 ForEach(Array(visits.prefix(30))) { entry in
-                    Card {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(entry.start.formatted(date: .abbreviated, time: .shortened)).font(.headline)
-                            Text(TimeMath.duration(max(0, (entry.end ?? .now).timeIntervalSince(entry.start)))).foregroundStyle(.secondary)
-                            if !entry.note.isEmpty { Text(entry.note).font(.subheadline) }
-                        }
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(entry.start.formatted(date: .abbreviated, time: .shortened)).font(.body.weight(.medium))
+                        Text(TimeMath.duration(max(0, (entry.end ?? .now).timeIntervalSince(entry.start)))).font(.subheadline).foregroundStyle(Theme.quiet)
+                        if !entry.note.isEmpty { Text(entry.note).font(.subheadline).foregroundStyle(Theme.quiet) }
+                        Divider().opacity(0.5).padding(.top, 8)
                     }
                 }
-                if visits.isEmpty { EmptyCard(title: "记忆，从第一次到访开始", message: "在这里度过的时间，会慢慢汇成你的生活。", symbol: "leaf") }
-                if !place.archived { Button("归档地点", role: .destructive) { archive = true }.frame(minHeight: 44) }
-            }.padding(20).frame(maxWidth: 760)
+                if visits.isEmpty { EmptyCard(title: "从第一次到访开始", message: "每一段停留，都会留在这里。", symbol: "clock") }
+            }.padding(24).frame(maxWidth: 680)
         }.frame(maxWidth: .infinity).pageCanvas().navigationTitle(place.name).navigationBarTitleDisplayMode(.inline)
-            .toolbar { if !place.archived { Button("编辑") { edit = true } } }
+            .toolbar {
+                if !place.archived {
+                    Menu {
+                        Button("编辑地点") { edit = true }
+                        Button("归档地点", role: .destructive) { archive = true }
+                    } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44) }.accessibilityLabel("地点操作")
+                }
+            }
             .sheet(isPresented: $edit) { PlaceEditor(existing: place) }
             .confirmationDialog("归档后停止监测，历史记录仍会保留。", isPresented: $archive, titleVisibility: .visible) {
                 Button("归档地点", role: .destructive) { store.archive(place); location.refreshRegions(); dismiss() }
             }
+    }
+    @ViewBuilder private var primaryMetrics: some View {
+        Metric(title: "累计停留", value: TimeMath.duration(visits.reduce(0) { $0 + max(0, ($1.end ?? .now).timeIntervalSince($1.start)) }))
+        Metric(title: "到访次数", value: "\(visits.count) 次")
     }
 }

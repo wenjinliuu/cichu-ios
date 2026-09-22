@@ -31,12 +31,15 @@ struct SharePosterView: View {
                     Toggle("包含自定义地点名称", isOn: $includeNames)
                     Text("默认仅展示地点类别，不含地址、坐标、备注或具体到访时刻。打开名称开关后，请自行检查是否包含敏感信息。")
                         .font(.footnote).foregroundStyle(.secondary)
+                    ShareLink(item: "此处 · 看见时间，留在哪里。\n已记录 \(TimeMath.duration(store.total(in: interval)))，移动 \(TimeMath.duration(store.total(in: interval, kind: .travel)))。") {
+                        Label("只分享文字", systemImage: "text.alignleft").font(.subheadline).frame(minHeight: 44)
+                    }
                     if let image {
                         Image(uiImage: image).resizable().scaledToFit().clipShape(RoundedRectangle(cornerRadius: 24))
                             .accessibilityLabel("时间分配分享海报")
                         ShareLink(item: Image(uiImage: image), preview: SharePreview("此处 · 时间留在哪里", image: Image(uiImage: image))) {
                             Label("分享图片", systemImage: "square.and.arrow.up").frame(maxWidth: .infinity, minHeight: 48)
-                        }.buttonStyle(.borderedProminent)
+                        }.buttonStyle(PrimaryButtonStyle())
                     } else { ProgressView("准备海报") }
                     if let error { Text(error).foregroundStyle(.red) }
                 }.padding(20).frame(maxWidth: 480)
@@ -67,7 +70,7 @@ private struct PosterCanvas: View {
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 28) {
-            HStack { Text("此处 / HERE").font(.caption.weight(.bold)).tracking(3); Spacer(); Image(systemName: "location.circle") }
+            HStack(spacing: 8) { BrandMark().frame(width: 22, height: 22); Text("此处").font(.subheadline.weight(.medium)); Spacer() }
             Text("时间，\n留在生活里。").font(.system(size: 36, weight: .bold, design: .rounded))
             Text("\(interval.start.formatted(date: .abbreviated, time: .omitted)) — \(min(interval.end, .now).formatted(date: .abbreviated, time: .omitted))")
                 .font(.caption).foregroundStyle(.secondary)

@@ -47,86 +47,98 @@ struct ReviewView: View {
     }
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                PageHeading(eyebrow: "YOUR TIME, IN PERSPECTIVE", title: "日子，慢慢成形。")
-                Picker("回顾范围", selection: $period) { ForEach(ReviewPeriod.allCases) { Text($0.rawValue).tag($0) } }
-                    .pickerStyle(.segmented)
-                if period != .all { DatePicker("回顾日期", selection: $date, in: ...Date.now, displayedComponents: .date) }
-                Card {
+            VStack(alignment: .leading, spacing: 32) {
+                VStack(spacing: 16) {
+                    Picker("回顾范围", selection: $period) { ForEach(ReviewPeriod.allCases) { Text($0.rawValue).tag($0) } }
+                        .pickerStyle(.segmented)
+                    if period != .all { DatePicker("回顾日期", selection: $date, in: ...Date.now, displayedComponents: .date).font(.subheadline) }
+                }
+                VStack(alignment: .leading, spacing: 12) {
+                    if let first = totals.first {
+                        Text("这段时光，最多留在\(first.place.name)。")
+                            .font(.title2.weight(.medium)).fixedSize(horizontal: false, vertical: true)
+                    } else {
+                        Text("等生活，慢慢留下轮廓。") .font(.title2.weight(.medium))
+                    }
+                    Text("已记录 \(TimeMath.duration(store.total(in: interval))) · \(totals.count) 个地点")
+                        .font(.subheadline).foregroundStyle(Theme.quiet)
+                }
+                if totals.isEmpty {
+                    Metric(title: "移动时间", value: TimeMath.duration(store.total(in: interval, kind: .travel)))
+                }
+                if !totals.isEmpty {
                     VStack(alignment: .leading, spacing: 20) {
-                        Text("\(interval.start.formatted(date: .abbreviated, time: .omitted)) — \(min(interval.end, .now).formatted(date: .abbreviated, time: .omitted))")
-                            .font(.caption).foregroundStyle(.secondary)
-                        Text(TimeMath.duration(store.total(in: interval))).font(.largeTitle.bold()).monospacedDigit()
-                        Text("被记录的生活").foregroundStyle(.secondary)
-                        if totals.isEmpty {
-                            Text("还没有足够的数据。每一次停留，都会让轮廓更清晰。").font(.subheadline).foregroundStyle(.secondary)
-                        } else {
-                            Chart(totals) { total in
-                                SectorMark(angle: .value("停留时间", total.seconds), innerRadius: .ratio(0.76), angularInset: 3)
-                                    .foregroundStyle(by: .value("地点", total.place.id.uuidString)).cornerRadius(5)
-                                    .accessibilityLabel(total.place.name).accessibilityValue(TimeMath.duration(total.seconds))
-                            }
-                            .chartForegroundStyleScale(domain: totals.map { $0.place.id.uuidString }, range: totals.map { Theme.color($0.place.kind) })
-                            .chartLegend(.hidden).frame(height: 190)
-                            .chartBackground { _ in VStack { Text("\(totals.count)").font(.largeTitle.bold()); Text("个生活坐标").font(.caption).foregroundStyle(.secondary) } }
-                            ForEach(totals) { total in
-                                HStack {
-                                    Label(total.place.name, systemImage: total.place.kind.symbol).foregroundStyle(Theme.color(total.place.kind))
-                                    Spacer(); Text(TimeMath.duration(total.seconds)).font(.subheadline.monospacedDigit())
-                                }.accessibilityElement(children: .combine)
+                        Text("停留分配").font(.headline)
+                        Chart(totals) { total in
+                            SectorMark(angle: .value("停留时间", total.seconds), innerRadius: .ratio(0.82), angularInset: 2)
+                                .foregroundStyle(by: .value("地点", total.place.id.uuidString)).cornerRadius(3)
+                                .accessibilityLabel(total.place.name).accessibilityValue(TimeMath.duration(total.seconds))
+                        }
+                        .chartForegroundStyleScale(domain: totals.map { $0.place.id.uuidString }, range: totals.map { Theme.color($0.place.kind) })
+                        .chartLegend(.hidden).frame(height: 156)
+                        .chartBackground { _ in
+                            VStack(spacing: 4) {
+                                Text("\(totals.count)").font(.title.weight(.medium)).monospacedDigit()
+                                Text("个地点").font(.caption).foregroundStyle(Theme.quiet)
                             }
                         }
-                        Divider()
-                        Metric(title: "移动时间", value: TimeMath.duration(store.total(in: interval, kind: .travel)))
-                    }
-                }
-                if !store.entries(in: interval).isEmpty {
-                    Card {
-                        VStack(alignment: .leading, spacing: 20) {
-                            Text(period == .year || period == .all ? "每个月的时间" : "每天的时间").font(.headline)
-                            Chart(buckets, id: \.self) { bucket in
-                                let component: Calendar.Component = period == .year || period == .all ? .month : .day
-                                let range = Calendar.current.dateInterval(of: component, for: bucket)!
-                                BarMark(x: .value("日期", bucket, unit: component), y: .value("小时", store.total(in: range) / 3600))
-                                    .foregroundStyle(Theme.accent.gradient).cornerRadius(4)
-                            }.frame(height: 180).chartXSelection(value: $selectedDay)
-                            if let selectedDay {
-                                Text("\(selectedDay.formatted(date: .abbreviated, time: .omitted)) · \(TimeMath.duration(store.total(in: Calendar.current.dateInterval(of: period == .year || period == .all ? .month : .day, for: selectedDay)!)))")
-                                    .font(.footnote).foregroundStyle(.secondary)
-                            }
+                        ForEach(totals) { total in
+                            NavigationLink { PlaceDetailView(place: total.place) } label: {
+                                HStack(spacing: 12) {
+                                    Image(systemName: total.place.kind.symbol).foregroundStyle(Theme.color(total.place.kind)).frame(width: 24).accessibilityHidden(true)
+                                    Text(total.place.name).foregroundStyle(Theme.ink)
+                                    Spacer()
+                                    Text(TimeMath.duration(total.seconds)).font(.subheadline.monospacedDigit()).foregroundStyle(Theme.quiet)
+                                }.padding(.vertical, 6).frame(minHeight: 44)
+                            }.buttonStyle(PressStyle()).accessibilityElement(children: .combine)
                         }
+                        Divider().opacity(0.5)
+                        HStack { Text("移动时间"); Spacer(); Text(TimeMath.duration(store.total(in: interval, kind: .travel))).monospacedDigit() }
+                            .font(.subheadline).foregroundStyle(Theme.quiet)
                     }
-                }
-                Text("往返之间").font(.title2.bold())
-                if routes.isEmpty {
-                    EmptyCard(title: "路上也有生活", message: "有了完整的离开与到达记录，就能看到常走路线的平均耗时。", symbol: "point.topleft.down.to.point.bottomright.curvepath")
-                } else {
-                    ForEach(routes) { route in
-                        Card {
-                            VStack(alignment: .leading, spacing: 14) {
-                                Text(route.title).font(.headline)
-                                HStack {
-                                    Metric(title: "单次平均", value: TimeMath.duration(route.seconds / Double(route.count)))
-                                    Metric(title: "完整移动", value: "\(route.count) 次")
-                                }
-                            }
+                    VStack(alignment: .leading, spacing: 20) {
+                        Text(period == .year || period == .all ? "每个月的时间" : "每天的时间").font(.headline)
+                        Chart(buckets, id: \.self) { bucket in
+                            let component: Calendar.Component = period == .year || period == .all ? .month : .day
+                            let range = Calendar.current.dateInterval(of: component, for: bucket)!
+                            BarMark(x: .value("日期", bucket, unit: component), y: .value("小时", store.total(in: range) / 3600))
+                                .foregroundStyle(Theme.accent.opacity(0.75)).cornerRadius(3)
+                        }.frame(height: 168).chartXSelection(value: $selectedDay)
+                            .animation(reduceMotion ? nil : Motion.change, value: period)
+                        if let selectedDay {
+                            Text("\(selectedDay.formatted(date: .abbreviated, time: .omitted)) · \(TimeMath.duration(store.total(in: Calendar.current.dateInterval(of: period == .year || period == .all ? .month : .day, for: selectedDay)!)))")
+                                .font(.footnote).foregroundStyle(Theme.quiet)
                         }
                     }
                 }
+                DisclosureGroup("常走的路线") {
+                    VStack(alignment: .leading, spacing: 16) {
+                        if routes.isEmpty {
+                            Text("完整的离开与到达记录，会形成路线统计。") .font(.subheadline).foregroundStyle(Theme.quiet)
+                        }
+                        ForEach(routes) { route in
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(route.title).font(.body.weight(.medium))
+                                Text("平均 \(TimeMath.duration(route.seconds / Double(route.count))) · \(route.count) 次")
+                                    .font(.subheadline).foregroundStyle(Theme.quiet)
+                            }.padding(.vertical, 8)
+                        }
+                    }.padding(.top, 16)
+                }.font(.headline)
                 NavigationLink("全部地点记忆", systemImage: "archivebox") {
                     List(store.places) { place in
                         NavigationLink { PlaceDetailView(place: place) } label: {
-                            HStack { PlaceBadge(kind: place.kind); Text(place.name); if place.archived { Text("已归档").font(.caption).foregroundStyle(.secondary) } }
+                            HStack { PlaceBadge(kind: place.kind); Text(place.name); if place.archived { Text("已归档").font(.caption).foregroundStyle(Theme.quiet) } }
                         }
                     }.navigationTitle("地点记忆")
-                }.frame(minHeight: 44)
-                Button("生成分享海报", systemImage: "photo") { poster = true }.buttonStyle(.borderedProminent).controlSize(.large)
-                ShareLink(item: "此处 · 看见时间，留在哪里。\n\(interval.start.formatted(date: .abbreviated, time: .omitted)) 至 \(min(interval.end, .now).formatted(date: .abbreviated, time: .omitted))\n记录了 \(TimeMath.duration(store.total(in: interval)))，在 \(totals.count) 个地点留下生活。") {
-                    Label("分享这段时光", systemImage: "square.and.arrow.up").frame(maxWidth: .infinity, minHeight: 48)
-                }.buttonStyle(.bordered)
-            }.padding(20).frame(maxWidth: 760)
-        }.frame(maxWidth: .infinity).pageCanvas().toolbar(.hidden, for: .navigationBar)
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: period)
+                }.font(.subheadline).frame(minHeight: 44)
+            }.padding(24).frame(maxWidth: 680)
+        }.frame(maxWidth: .infinity).pageCanvas().navigationTitle("回顾")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { poster = true } label: { Image(systemName: "square.and.arrow.up").frame(width: 44, height: 44) }.accessibilityLabel("分享回顾")
+                }
+            }
             .sheet(isPresented: $poster) { SharePosterView(interval: interval) }
             .onChange(of: period) { _, _ in selectedDay = nil }
     }

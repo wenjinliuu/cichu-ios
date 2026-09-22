@@ -12,10 +12,10 @@ struct SetupGuideView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    PageHeading(eyebrow: "按自己的节奏开始", title: "让时间，有处安放。")
+                    PageHeading(title: "让时间，有处安放。")
                     step("1", "添加一个熟悉的地方", detail: "先从家或公司开始，地图选点后设定识别范围。", done: !store.visiblePlaces.isEmpty)
                     Button(store.visiblePlaces.isEmpty ? "添加第一个地点" : "再添加一个地点", systemImage: "plus") { adding = true }
-                        .buttonStyle(.borderedProminent).controlSize(.large)
+                        .buttonStyle(PrimaryButtonStyle()).controlSize(.large)
                     step("2", "选择自动记录", detail: "开启后先请求使用期间定位；也可以跳过，完全手动记录。", done: location.enabled && location.authorized)
                     Button("开启自动记录") { location.setEnabled(true) }
                         .buttonStyle(.bordered).disabled(store.visiblePlaces.isEmpty || store.isDemo)
@@ -35,7 +35,7 @@ struct SetupGuideView: View {
                             }
                         }
                     }
-                    Button("准备好了，开始使用") { complete() }.buttonStyle(.borderedProminent).controlSize(.large)
+                    Button("准备好了，开始使用") { complete() }.buttonStyle(PrimaryButtonStyle()).controlSize(.large)
                     Button("暂时手动记录，稍后设置") { complete() }.frame(minHeight: 44)
                 }.padding(24).frame(maxWidth: 650)
             }.frame(maxWidth: .infinity).pageCanvas()
@@ -46,7 +46,9 @@ struct SetupGuideView: View {
     private func complete() { if let finish { finish() } else { dismiss() } }
     private func step(_ number: String, _ title: String, detail: String, done: Bool) -> some View {
         HStack(alignment: .top, spacing: 16) {
-            Text(done ? "✓" : number).font(.headline).frame(width: 36, height: 36)
+            Group {
+                if done { Image(systemName: "checkmark") } else { Text(number) }
+            }.font(.headline).frame(width: 36, height: 36)
                 .background(Theme.accent.opacity(0.12), in: Circle()).foregroundStyle(Theme.accent)
                 .accessibilityLabel(done ? "已完成" : "第 \(number) 步")
             VStack(alignment: .leading, spacing: 8) {

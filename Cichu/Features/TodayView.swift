@@ -1,149 +1,157 @@
 import SwiftUI
 import Charts
 
+private enum TodaySheet: String, Identifiable {
+    case place, entry, share
+    var id: String { rawValue }
+}
+
 struct TodayView: View {
     @Environment(JournalStore.self) private var store
-    @Environment(LocationService.self) private var location
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var selectedDate = Date.now
-    @State private var addEntry = false
-    @State private var addPlace = false
-    @State private var poster = false
+    @State private var sheet: TodaySheet?
     private var interval: DateInterval { TimeMath.day(selectedDate) }
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                PageHeading(eyebrow: "HERE / 此处", title: "时间，有迹可循。")
+            VStack(alignment: .leading, spacing: 32) {
                 HStack {
-                    DatePicker("日期", selection: $selectedDate, in: ...Date.now, displayedComponents: .date)
-                        .labelsHidden().accessibilityLabel("查看日期")
+                    DatePicker("查看日期", selection: $selectedDate, in: ...Date.now, displayedComponents: .date).labelsHidden()
                     Spacer()
                     if !Calendar.current.isDateInToday(selectedDate) {
-                        Button("回到今天") { selectedDate = .now }.frame(minHeight: 44)
+                        Button("今天") { selectedDate = .now }.frame(minHeight: 44)
                     }
                 }
                 if Calendar.current.isDateInToday(selectedDate) { CurrentCard() }
+                DaySummary(interval: interval)
                 if !store.concerns().isEmpty {
                     NavigationLink { RecordReviewView() } label: {
-                        Label("有 \(store.concerns().count) 段记录值得核对", systemImage: "exclamationmark.circle")
-                            .frame(maxWidth: .infinity, minHeight: 48)
-                    }.buttonStyle(.bordered)
+                        Label("\(store.concerns().count) 段记录待核对", systemImage: "exclamationmark.circle")
+                            .font(.subheadline).frame(minHeight: 44)
+                    }
                 }
-                DaySummary(interval: interval)
-                Button("分享今日此处", systemImage: "square.and.arrow.up") { poster = true }.frame(minHeight: 44)
-                HStack {
-                    Text("时间留在这里").font(.title2.bold()); Spacer()
-                    Button { addPlace = true } label: { Image(systemName: "plus").frame(width: 44, height: 44) }
-                        .accessibilityLabel("添加地点")
-                }
-                if store.visiblePlaces.isEmpty {
-                    EmptyCard(title: "从一个熟悉的地方开始", message: "添加家、公司或常去的咖啡店，让每一天的时间有处安放。", symbol: "mappin.circle")
-                    Button("添加第一个地点") { addPlace = true }.buttonStyle(.borderedProminent)
-                } else {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("停留地点").font(.headline)
+                    if store.visiblePlaces.isEmpty {
+                        EmptyCard(title: "从一个熟悉的地方开始", message: "添加家或公司，慢慢留下生活的轮廓。", symbol: "mappin")
+                        Button("添加地点") { sheet = .place }.buttonStyle(PrimaryButtonStyle()).controlSize(.large)
+                    } else {
                         ForEach(store.visiblePlaces) { place in
                             NavigationLink { PlaceDetailView(place: place) } label: {
                                 PlaceTile(place: place, duration: store.total(in: interval, kind: .stay, placeID: place.id))
                             }.buttonStyle(PressStyle())
+                            Divider().opacity(0.5)
                         }
                     }
                 }
-                HStack {
-                    Text("这一天").font(.title2.bold()); Spacer()
-                    Button("补记", systemImage: "plus") { addEntry = true }.disabled(store.visiblePlaces.isEmpty).frame(minHeight: 44)
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Text("最近记录").font(.headline); Spacer()
+                        NavigationLink("全部") { DayJournalView(date: selectedDate) }.font(.subheadline).frame(minHeight: 44)
+                    }
+                    if store.entries(in: interval).isEmpty {
+                        Text("这一天还没有记录。").foregroundStyle(Theme.quiet).font(.subheadline).padding(.vertical, 12)
+                    } else { EntryList(interval: interval, limit: 3) }
                 }
-                if store.entries(in: interval).isEmpty {
-                    EmptyCard(title: "留一点空白，也很好", message: "这一天还没有记录。自动识别的停留和手动补记会出现在这里。", symbol: "clock")
-                } else {
-                    NavigationLink { DayReplayView(date: selectedDate) } label: {
-                        Label("在地图上回看这一天", systemImage: "play.circle.fill").frame(maxWidth: .infinity, minHeight: 48)
-                    }.buttonStyle(.bordered)
-                    EntryList(interval: interval)
+            }.padding(.horizontal, 24).padding(.vertical, 16).frame(maxWidth: 680)
+        }.frame(maxWidth: .infinity).pageCanvas().navigationTitle("此处")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button("补记时间", systemImage: "plus") { sheet = .entry }.disabled(store.visiblePlaces.isEmpty)
+                        Button("添加地点", systemImage: "mappin.and.ellipse") { sheet = .place }
+                        Button("分享这一天", systemImage: "square.and.arrow.up") { sheet = .share }
+                    } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44) }.accessibilityLabel("今日操作")
                 }
-            }.padding(20).frame(maxWidth: 760)
-        }.frame(maxWidth: .infinity).pageCanvas().toolbar(.hidden, for: .navigationBar)
-            .sheet(isPresented: $poster) { SharePosterView(interval: interval) }
-            .sheet(isPresented: $addPlace) { PlaceEditor() }
-            .sheet(isPresented: $addEntry) { EntryEditor(date: selectedDate) }
+            }
+            .sheet(item: $sheet) { destination in
+                switch destination {
+                case .place: PlaceEditor()
+                case .entry: EntryEditor(date: selectedDate)
+                case .share: SharePosterView(interval: interval)
+                }
+            }
+            .animation(reduceMotion ? nil : Motion.change, value: Calendar.current.isDateInToday(selectedDate))
     }
 }
 
 private struct CurrentCard: View {
     @Environment(JournalStore.self) private var store
     @Environment(LocationService.self) private var location
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        VStack(alignment: .leading, spacing: 20) {
             HStack {
                 Label(store.active == nil ? "此刻" : "正在记录", systemImage: store.active == nil ? "circle" : "record.circle")
-                    .font(.subheadline.weight(.medium)).foregroundStyle(Theme.mint)
+                    .font(.caption.weight(.medium)).foregroundStyle(Theme.accent)
                 Spacer()
-                Image(systemName: store.active?.kind == .travel ? "figure.walk" : (store.place(store.active?.placeID)?.kind.symbol ?? "leaf"))
-                    .font(.title2).foregroundStyle(Theme.mint).accessibilityHidden(true)
+                if store.active != nil {
+                    Button {
+                        if location.enabled { location.setEnabled(false) } else { store.stop() }
+                    } label: { Image(systemName: "pause").frame(width: 44, height: 44) }
+                        .accessibilityLabel("暂停记录").buttonStyle(PressStyle())
+                }
             }
             if let active = store.active {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(store.title(active)).font(.largeTitle.bold())
-                    TimelineView(.periodic(from: .now, by: 60)) { timeline in
-                        Text(TimeMath.duration(timeline.date.timeIntervalSince(active.start)))
-                            .font(.system(.largeTitle, design: .rounded).weight(.medium)).monospacedDigit()
-                            .foregroundStyle(Theme.mint)
-                    }
-                    Text("\(active.start.formatted(date: .omitted, time: .shortened)) 开始 · \(active.source == .automatic ? "自动识别" : "手动记录")")
-                        .font(.footnote).foregroundStyle(.white.opacity(0.8))
+                Text(store.title(active)).font(.title2.weight(.semibold)).fixedSize(horizontal: false, vertical: true)
+                TimelineView(.periodic(from: .now, by: 60)) { timeline in
+                    let duration = TimeMath.duration(timeline.date.timeIntervalSince(active.start))
+                    Text(duration).font(.system(.largeTitle, design: .rounded).weight(.medium)).monospacedDigit()
+                        .contentTransition(reduceMotion ? .identity : .numericText())
+                        .animation(reduceMotion ? nil : Motion.change, value: duration)
                 }
-                Button {
-                    if location.enabled { location.setEnabled(false) } else { store.stop() }
-                } label: {
-                    Label("暂停记录", systemImage: "pause.fill").frame(maxWidth: .infinity, minHeight: 48)
-                }.buttonStyle(.bordered).tint(.white)
+                Text("\(active.start.formatted(date: .omitted, time: .shortened)) 开始")
+                    .font(.subheadline).foregroundStyle(Theme.quiet)
             } else {
-                Text("慢慢走，\n生活会留下印记。").font(.title.bold())
-                Text(location.statusTitle).font(.subheadline).foregroundStyle(.white.opacity(0.8))
-                if !store.isDemo {
-                    Button(location.enabled ? "刷新当前位置" : "开启自动记录") {
+                Text("慢慢走，留下生活。").font(.title2.weight(.medium))
+                Text(location.statusTitle).font(.subheadline).foregroundStyle(Theme.quiet)
+                if !store.isDemo && !store.visiblePlaces.isEmpty {
+                    Button(location.enabled ? "刷新位置" : "开启自动记录") {
                         if location.enabled { location.locateOnce() } else { location.setEnabled(true) }
-                    }.buttonStyle(.bordered).tint(.white).disabled(store.visiblePlaces.isEmpty)
+                    }.buttonStyle(.bordered).controlSize(.large)
                 }
             }
         }.padding(24).frame(maxWidth: .infinity, alignment: .leading)
-            .foregroundStyle(.white)
-            .background {
-                ZStack(alignment: .topTrailing) {
-                    Theme.hero
-                    Circle().stroke(.white.opacity(0.06), lineWidth: 32).frame(width: 190, height: 190).offset(x: 65, y: -45)
-                    Circle().stroke(.white.opacity(0.05), lineWidth: 1).frame(width: 280, height: 280).offset(x: 85, y: -90)
-                }.clipShape(RoundedRectangle(cornerRadius: 32))
-            }
+            .background(Theme.highlight, in: RoundedRectangle(cornerRadius: 24))
+            .animation(reduceMotion ? nil : Motion.change, value: store.active?.id)
     }
 }
 
 struct DaySummary: View {
     @Environment(JournalStore.self) private var store
     let interval: DateInterval
+    @State private var explanation = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
-        Card {
-            VStack(alignment: .leading, spacing: 20) {
-                HStack { Text("一天的轮廓").font(.headline); Spacer(); Image(systemName: "clock").foregroundStyle(Theme.accent) }
-                TimelineView(.periodic(from: .now, by: 60)) { timeline in
-                    let entries = store.entries(in: interval, now: timeline.date)
-                    Chart(entries) { entry in
-                        BarMark(xStart: .value("开始", max(entry.start, interval.start)),
-                                xEnd: .value("结束", min(entry.end ?? timeline.date, interval.end)), y: .value("记录", "时间"))
-                        .foregroundStyle(entry.kind == .travel ? Color.gray : Theme.color(store.place(entry.placeID)?.kind ?? .other))
-                        .cornerRadius(4)
-                        .accessibilityLabel(store.title(entry))
-                        .accessibilityValue(TimeMath.duration(entry.duration(in: interval, now: timeline.date)))
-                    }.chartXScale(domain: interval.start...interval.end).chartYAxis(.hidden)
-                        .chartXAxis { AxisMarks(values: .stride(by: .hour, count: 6)) { AxisValueLabel(format: .dateTime.hour(.defaultDigits(amPM: .omitted))) } }
-                        .frame(height: 64)
-                    HStack(alignment: .top, spacing: 16) {
-                        Metric(title: "地点停留", value: TimeMath.duration(store.total(in: interval, kind: .stay, now: timeline.date)))
-                        Metric(title: "移动时间", value: TimeMath.duration(store.total(in: interval, kind: .travel, now: timeline.date)))
-                    }
+        VStack(alignment: .leading, spacing: 16) {
+            Text("时间分布").font(.headline)
+            TimelineView(.periodic(from: .now, by: 60)) { timeline in
+                let entries = store.entries(in: interval, now: timeline.date)
+                Chart(entries) { entry in
+                    BarMark(xStart: .value("开始", max(entry.start, interval.start)),
+                            xEnd: .value("结束", min(entry.end ?? timeline.date, interval.end)), y: .value("记录", "时间"))
+                    .foregroundStyle(entry.kind == .travel ? Theme.quiet.opacity(0.35) : Theme.color(store.place(entry.placeID)?.kind ?? .other))
+                    .cornerRadius(3)
+                    .accessibilityLabel(store.title(entry))
+                    .accessibilityValue(TimeMath.duration(entry.duration(in: interval, now: timeline.date)))
+                }.chartXScale(domain: interval.start...interval.end).chartYAxis(.hidden)
+                    .chartXAxis { AxisMarks(values: .stride(by: .hour, count: 6)) { AxisValueLabel(format: .dateTime.hour(.defaultDigits(amPM: .omitted))) } }
+                    .frame(height: 52)
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 24) { metrics(timeline.date) }
+                    VStack(alignment: .leading, spacing: 20) { metrics(timeline.date) }
                 }
-                Text("空白表示没有记录；移动时长由离开与到达时间计算。")
-                    .font(.caption).foregroundStyle(.secondary)
             }
+            DisclosureGroup("如何计算", isExpanded: $explanation) {
+                Text("空白是未记录的时间。移动时长由离开与到达计算，不代表连续 GPS 轨迹。")
+                    .font(.footnote).foregroundStyle(Theme.quiet).padding(.top, 8)
+            }.font(.caption).foregroundStyle(Theme.quiet)
+                .animation(reduceMotion ? nil : Motion.expand, value: explanation)
         }
+    }
+    @ViewBuilder private func metrics(_ now: Date) -> some View {
+        Metric(title: "地点停留", value: TimeMath.duration(store.total(in: interval, kind: .stay, now: now)))
+        Metric(title: "移动", value: TimeMath.duration(store.total(in: interval, kind: .travel, now: now)))
     }
 }
 
@@ -151,12 +159,15 @@ struct PlaceTile: View {
     let place: Place
     let duration: TimeInterval
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack { PlaceBadge(kind: place.kind); Spacer(); Image(systemName: "arrow.up.right").font(.caption).foregroundStyle(.secondary) }
-            Text(place.name).font(.headline).foregroundStyle(Theme.ink)
-            Text(TimeMath.duration(duration)).font(.subheadline).foregroundStyle(.secondary)
-        }.padding(18).frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.color(place.kind).opacity(0.08), in: RoundedRectangle(cornerRadius: 24))
+        HStack(spacing: 14) {
+            PlaceBadge(kind: place.kind)
+            VStack(alignment: .leading, spacing: 5) {
+                Text(place.name).font(.body.weight(.medium)).foregroundStyle(Theme.ink)
+                Text(TimeMath.duration(duration)).font(.subheadline).foregroundStyle(Theme.quiet)
+            }
+            Spacer(minLength: 8)
+            Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.quiet)
+        }.padding(.vertical, 12).frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityElement(children: .combine)
     }
 }
@@ -164,29 +175,45 @@ struct PlaceTile: View {
 struct EntryList: View {
     @Environment(JournalStore.self) private var store
     let interval: DateInterval
+    var limit: Int? = nil
     @State private var editing: JournalEntry?
+    private var visible: [JournalEntry] {
+        let all = store.entries(in: interval)
+        return limit.map { Array(all.suffix($0).reversed()) } ?? all
+    }
     var body: some View {
-        LazyVStack(spacing: 12) {
-            ForEach(store.entries(in: interval)) { entry in
+        LazyVStack(spacing: 0) {
+            ForEach(visible) { entry in
                 Button { editing = entry } label: {
-                    Card {
-                        HStack(alignment: .top, spacing: 14) {
-                            Image(systemName: entry.kind == .travel ? "arrow.triangle.turn.up.right.diamond" : (store.place(entry.placeID)?.kind.symbol ?? "mappin"))
-                                .foregroundStyle(Theme.accent).frame(width: 28).accessibilityHidden(true)
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text(store.title(entry)).font(.headline)
-                                Text("\(max(entry.start, interval.start).formatted(date: .omitted, time: .shortened)) — \(entry.end.map { min($0, interval.end).formatted(date: .omitted, time: .shortened) } ?? "现在")")
-                                    .font(.caption).foregroundStyle(.secondary)
-                                Text("\(TimeMath.duration(entry.duration(in: interval))) · \(entry.source == .automatic ? "自动识别" : "手动记录")")
-                                    .font(.caption).foregroundStyle(.secondary)
-                                if !entry.note.isEmpty { Text(entry.note).font(.subheadline).foregroundStyle(.secondary) }
-                            }
-                            Spacer(minLength: 0)
-                            Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary)
+                    HStack(alignment: .top, spacing: 16) {
+                        Text(max(entry.start, interval.start).formatted(date: .omitted, time: .shortened))
+                            .font(.caption.monospacedDigit()).foregroundStyle(Theme.quiet).frame(minWidth: 46, alignment: .leading)
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(store.title(entry)).font(.body.weight(.medium)).multilineTextAlignment(.leading)
+                            Text(TimeMath.duration(entry.duration(in: interval))).font(.subheadline).foregroundStyle(Theme.quiet)
+                            if !entry.note.isEmpty { Text(entry.note).font(.caption).foregroundStyle(Theme.quiet).lineLimit(2) }
                         }
-                    }
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right").font(.caption2).foregroundStyle(Theme.quiet)
+                    }.padding(.vertical, 16).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
                 }.buttonStyle(PressStyle()).foregroundStyle(Theme.ink)
+                Divider().opacity(0.5)
             }
-        }.sheet(item: $editing) { entry in EntryDetailView(entry: entry) }
+        }.sheet(item: $editing) { EntryDetailView(entry: $0) }
+    }
+}
+
+struct DayJournalView: View {
+    let date: Date
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                Text(date.formatted(date: .complete, time: .omitted)).font(.subheadline).foregroundStyle(Theme.quiet)
+                NavigationLink { DayReplayView(date: date) } label: {
+                    Label("地图回看", systemImage: "play.circle").frame(minHeight: 44)
+                }
+                EntryList(interval: TimeMath.day(date))
+            }.padding(24).frame(maxWidth: 680)
+        }.frame(maxWidth: .infinity).pageCanvas().navigationTitle("这一天").navigationBarTitleDisplayMode(.inline)
     }
 }

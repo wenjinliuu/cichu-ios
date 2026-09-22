@@ -15,10 +15,13 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("此处").font(.largeTitle.bold())
-                    Text("看见时间，留在哪里。").foregroundStyle(.secondary)
-                }.padding(.vertical, 16)
+                HStack(spacing: 16) {
+                    BrandMark().frame(width: 40, height: 40)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("此处").font(.headline)
+                        Text("看见时间，留在哪里。").font(.subheadline).foregroundStyle(Theme.quiet)
+                    }
+                }.padding(.vertical, 8)
             }
             Section {
                 Toggle("自动记录", isOn: Binding(get: { location.enabled }, set: { location.setEnabled($0) })).disabled(store.isDemo)
@@ -30,9 +33,11 @@ struct SettingsView: View {
                 Button("打开系统权限设置") {
                     if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                 }.disabled(store.isDemo)
-            } header: { Text("让记录自然发生") } footer: {
-                Text("后台识别建议允许“始终”定位及精确位置。系统省电、信号、强制退出等可能延迟或中断记录；重要时间可手动调整。暂停记录会结束当前停留，暂停期间不计入通勤。")
-            }
+                DisclosureGroup("记录与权限说明") {
+                    Text("后台识别建议允许始终定位及精确位置。省电、信号和强制退出可能中断记录；重要时间可手动调整。暂停会结束当前停留，暂停期间不计入通勤。")
+                        .font(.footnote).foregroundStyle(Theme.quiet)
+                }
+            } header: { Text("记录") }
             Section("外观") {
                 Picker("主题", selection: $appearance) {
                     Text("跟随系统").tag("system"); Text("浅色").tag("light"); Text("深色").tag("dark")
@@ -48,7 +53,7 @@ struct SettingsView: View {
                 Button("从备份恢复", systemImage: "square.and.arrow.down") { importing = true }
                     .disabled(!store.places.isEmpty || !store.entries.isEmpty || store.isDemo)
             } header: { Text("你的数据，由你保管") } footer: {
-                Text("备份为含地点坐标的 JSON 文件，请自行妥善保存。恢复仅支持空数据库，避免覆盖已有记录。数据默认只保存在本机；卸载应用前请导出备份。")
+                Text("备份包含地点坐标，请妥善保管。仅空数据库可恢复；卸载前请备份。")
             }
             Section("开始与检查") {
                 NavigationLink("记录设置向导") { SetupGuideView() }
