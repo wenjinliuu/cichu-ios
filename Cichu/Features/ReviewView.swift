@@ -13,6 +13,40 @@ struct RouteTotal: Identifiable {
     let seconds: Double
 }
 
+private struct PlaceTotalLink: View {
+    let total: PlaceTotal
+
+    var body: some View {
+        NavigationLink {
+            PlaceDetailView(place: total.place)
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: total.place.kind.symbol)
+                    .foregroundStyle(Theme.color(total.place.kind))
+                    .frame(width: 24)
+                    .accessibilityHidden(true)
+                AdaptiveRow {
+                    Text(total.place.name)
+                        .foregroundStyle(Theme.ink)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(TimeMath.duration(total.seconds))
+                        .font(.subheadline.monospacedDigit())
+                        .foregroundStyle(Theme.quiet)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .foregroundStyle(Theme.quiet)
+                    .accessibilityHidden(true)
+            }
+            .padding(.vertical, 6)
+            .frame(minHeight: 44)
+        }
+        .buttonStyle(PressStyle())
+        .accessibilityElement(children: .combine)
+    }
+}
+
 struct ReviewView: View {
     @Environment(JournalStore.self) private var store
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -99,18 +133,7 @@ struct ReviewView: View {
                             }
                         }
                         ForEach(totals) { total in
-                            NavigationLink { PlaceDetailView(place: total.place) } label: {
-                                HStack(spacing: 12) {
-                                    Image(systemName: total.place.kind.symbol).foregroundStyle(Theme.color(total.place.kind)).frame(width: 24).accessibilityHidden(true)
-                                    AdaptiveRow {
-                                        Text(total.place.name).foregroundStyle(Theme.ink)
-                                            .frame(maxWidth: .infinity, alignment: .leading)
-                                        Text(TimeMath.duration(total.seconds)).font(.subheadline.monospacedDigit()).foregroundStyle(Theme.quiet)
-                                            .fixedSize(horizontal: false, vertical: true)
-                                    }
-                                    Image(systemName: "chevron.right").font(.caption2).foregroundStyle(Theme.quiet).accessibilityHidden(true)
-                                }.padding(.vertical, 6).frame(minHeight: 44)
-                            }.buttonStyle(PressStyle()).accessibilityElement(children: .combine)
+                            PlaceTotalLink(total: total)
                         }
                         Divider().opacity(0.5)
                         AdaptiveRow {
@@ -159,12 +182,14 @@ struct ReviewView: View {
                         }
                     }.padding(.top, 16)
                 }.font(.headline)
-                NavigationLink("全部地点记忆", systemImage: "archivebox") {
+                NavigationLink {
                     List(store.places) { place in
                         NavigationLink { PlaceDetailView(place: place) } label: {
                             HStack { PlaceBadge(kind: place.kind); Text(place.name); if place.archived { Text("已归档").font(.caption).foregroundStyle(Theme.quiet) } }
                         }
                     }.navigationTitle("地点记忆")
+                } label: {
+                    Label("全部地点记忆", systemImage: "archivebox")
                 }.font(.subheadline).frame(minHeight: 44)
             }.padding(24).frame(maxWidth: 680)
         }.frame(maxWidth: .infinity).pageCanvas().navigationTitle("回顾")

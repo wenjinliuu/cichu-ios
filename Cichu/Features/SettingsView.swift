@@ -60,7 +60,9 @@ struct SettingsView: View {
                 NavigationLink("核对异常记录") { RecordReviewView() }
             }
             Section("关于") {
-                NavigationLink("隐私说明", systemImage: "lock.shield") { PrivacyView() }
+                NavigationLink { PrivacyView() } label: {
+                    Label("隐私说明", systemImage: "lock.shield")
+                }
                 if !store.isDemo { Button("体验示例数据", systemImage: "sparkles") { demo = true } }
                 LabeledContent("版本", value: "1.0 · 初始版本")
             }
