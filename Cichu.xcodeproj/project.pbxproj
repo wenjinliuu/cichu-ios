@@ -430,7 +430,8 @@
 		"3CF6A4F2E05B3AAE7E2CBFEE" = {
 			"isa" = "XCBuildConfiguration";
 			"buildSettings" = {
-				"PRODUCT_BUNDLE_IDENTIFIER" = "com.wenjin.cichu";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.wenjinliu.cichu";
+				"DEVELOPMENT_TEAM" = "F6FB339Y3Z";
 				"PRODUCT_NAME" = "$(TARGET_NAME)";
 				"INFOPLIST_FILE" = "Cichu/Resources/Info.plist";
 				"GENERATE_INFOPLIST_FILE" = "NO";
@@ -453,7 +454,8 @@
 		"23FB2CAEB38545C3793097DD" = {
 			"isa" = "XCBuildConfiguration";
 			"buildSettings" = {
-				"PRODUCT_BUNDLE_IDENTIFIER" = "com.wenjin.cichu";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.wenjinliu.cichu";
+				"DEVELOPMENT_TEAM" = "F6FB339Y3Z";
 				"PRODUCT_NAME" = "$(TARGET_NAME)";
 				"INFOPLIST_FILE" = "Cichu/Resources/Info.plist";
 				"GENERATE_INFOPLIST_FILE" = "NO";
@@ -483,7 +485,8 @@
 		"E2657B9FA91DD4A55652006F" = {
 			"isa" = "XCBuildConfiguration";
 			"buildSettings" = {
-				"PRODUCT_BUNDLE_IDENTIFIER" = "com.wenjin.cichu.tests";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.wenjinliu.cichu.tests";
+				"DEVELOPMENT_TEAM" = "F6FB339Y3Z";
 				"PRODUCT_NAME" = "$(TARGET_NAME)";
 				"GENERATE_INFOPLIST_FILE" = "YES";
 				"TARGETED_DEVICE_FAMILY" = "1,2";
@@ -504,7 +507,8 @@
 		"B4343C19535B18410503AED7" = {
 			"isa" = "XCBuildConfiguration";
 			"buildSettings" = {
-				"PRODUCT_BUNDLE_IDENTIFIER" = "com.wenjin.cichu.tests";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.wenjinliu.cichu.tests";
+				"DEVELOPMENT_TEAM" = "F6FB339Y3Z";
 				"PRODUCT_NAME" = "$(TARGET_NAME)";
 				"GENERATE_INFOPLIST_FILE" = "YES";
 				"TARGETED_DEVICE_FAMILY" = "1,2";
