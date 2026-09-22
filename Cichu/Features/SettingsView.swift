@@ -50,6 +50,10 @@ struct SettingsView: View {
             } header: { Text("你的数据，由你保管") } footer: {
                 Text("备份为含地点坐标的 JSON 文件，请自行妥善保存。恢复仅支持空数据库，避免覆盖已有记录。数据默认只保存在本机；卸载应用前请导出备份。")
             }
+            Section("开始与检查") {
+                NavigationLink("记录设置向导") { SetupGuideView() }
+                NavigationLink("核对异常记录") { RecordReviewView() }
+            }
             Section("关于") {
                 NavigationLink("隐私说明", systemImage: "lock.shield") { PrivacyView() }
                 if !store.isDemo { Button("体验示例数据", systemImage: "sparkles") { demo = true } }

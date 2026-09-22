@@ -7,6 +7,7 @@ struct TodayView: View {
     @State private var selectedDate = Date.now
     @State private var addEntry = false
     @State private var addPlace = false
+    @State private var poster = false
     private var interval: DateInterval { TimeMath.day(selectedDate) }
     var body: some View {
         ScrollView {
@@ -21,7 +22,14 @@ struct TodayView: View {
                     }
                 }
                 if Calendar.current.isDateInToday(selectedDate) { CurrentCard() }
+                if !store.concerns().isEmpty {
+                    NavigationLink { RecordReviewView() } label: {
+                        Label("有 \(store.concerns().count) 段记录值得核对", systemImage: "exclamationmark.circle")
+                            .frame(maxWidth: .infinity, minHeight: 48)
+                    }.buttonStyle(.bordered)
+                }
                 DaySummary(interval: interval)
+                Button("分享今日此处", systemImage: "square.and.arrow.up") { poster = true }.frame(minHeight: 44)
                 HStack {
                     Text("时间留在这里").font(.title2.bold()); Spacer()
                     Button { addPlace = true } label: { Image(systemName: "plus").frame(width: 44, height: 44) }
@@ -53,6 +61,7 @@ struct TodayView: View {
                 }
             }.padding(20).frame(maxWidth: 760)
         }.frame(maxWidth: .infinity).pageCanvas().toolbar(.hidden, for: .navigationBar)
+            .sheet(isPresented: $poster) { SharePosterView(interval: interval) }
             .sheet(isPresented: $addPlace) { PlaceEditor() }
             .sheet(isPresented: $addEntry) { EntryEditor(date: selectedDate) }
     }

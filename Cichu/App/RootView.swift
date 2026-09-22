@@ -30,6 +30,7 @@ struct RootView: View {
 struct WelcomeView: View {
     let finish: () -> Void
     @State private var demo = false
+    @State private var setup = false
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
@@ -45,13 +46,14 @@ struct WelcomeView: View {
                         Label("无需账号，记录保存在本机", systemImage: "lock.shield")
                     }.font(.subheadline)
                 }
-                Button(action: finish) { Text("开始我的记录").frame(maxWidth: .infinity).padding(12) }
+                Button { setup = true } label: { Text("开始我的记录").frame(maxWidth: .infinity).padding(12) }
                     .buttonStyle(.borderedProminent).controlSize(.large)
                 Button("先看看示例") { demo = true }.frame(maxWidth: .infinity, minHeight: 44)
                 Text("添加地点后再选择是否开启定位。你也可以始终手动记录。")
                     .font(.footnote).foregroundStyle(.secondary)
             }.padding(24).frame(maxWidth: 650)
         }.frame(maxWidth: .infinity).pageCanvas()
+            .sheet(isPresented: $setup) { SetupGuideView { setup = false; finish() } }
             .fullScreenCover(isPresented: $demo) { DemoHost() }
     }
 }

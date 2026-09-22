@@ -49,4 +49,20 @@ import SwiftData
         XCTAssertNil(restored.active)
         _ = restoredContainer
     }
+    func testSplitAndMergePreserveDurationAndRejectGap() throws {
+        let (container, store) = try makeStore()
+        let place = Place(name: "家", kind: .home, latitude: 31, longitude: 121)
+        container.mainContext.insert(place); store.commit()
+        let start = Date.now.addingTimeInterval(-7200)
+        XCTAssertTrue(store.saveEntry(existing: nil, place: place, start: start, end: start.addingTimeInterval(3600), note: ""))
+        let entry = try XCTUnwrap(store.entries.first)
+        XCTAssertTrue(store.split(entry, at: start.addingTimeInterval(1800)))
+        XCTAssertEqual(store.entries.count, 2)
+        XCTAssertEqual(store.total(in: DateInterval(start: start, duration: 7200)), 3600)
+        XCTAssertTrue(store.mergeNext(entry))
+        XCTAssertEqual(store.entries.count, 1)
+        XCTAssertTrue(store.saveEntry(existing: nil, place: place, start: start.addingTimeInterval(4000), end: start.addingTimeInterval(5000), note: ""))
+        XCTAssertFalse(store.mergeNext(entry))
+        XCTAssertEqual(store.entries.count, 2)
+    }
 }

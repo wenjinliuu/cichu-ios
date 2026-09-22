@@ -3,6 +3,7 @@ import SwiftUI
 struct EntryEditor: View {
     @Environment(JournalStore.self) private var store
     @Environment(\.dismiss) private var dismiss
+    @Environment(LocationService.self) private var location
     let existing: JournalEntry?
     @State private var placeID: UUID?
     @State private var start: Date
@@ -40,6 +41,7 @@ struct EntryEditor: View {
                         }
                     }
                 }
+                if existing != nil && existing?.end == nil { Section { Text("修正进行中的记录会暂停自动记录，避免立即重新创建；稍后可在设置中开启。") } }
                 Section("这段时间") {
                     DatePicker("到达", selection: $start, in: ...Date.now)
                     DatePicker("离开", selection: $end, in: ...Date.now)
@@ -56,8 +58,11 @@ struct EntryEditor: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("保存") {
                         guard let place = store.place(placeID) else { return }
+                        let wasActive = existing != nil && existing?.end == nil
                         if store.saveEntry(existing: existing, place: place, start: start, end: end, note: note,
-                                           kind: kind, destination: store.place(destinationID)) { dismiss() }
+                                           kind: kind, destination: store.place(destinationID)) {
+                            if wasActive { location.setEnabled(false) }; dismiss()
+                        }
                     }.disabled(placeID == nil || end <= start)
                 }
             }
@@ -72,6 +77,8 @@ struct EntryDetailView: View {
     let entry: JournalEntry
     @State private var edit = false
     @State private var delete = false
+    @State private var splitDate = Date.now
+    @State private var splitting = false
     var body: some View {
         NavigationStack {
             Form {
@@ -90,10 +97,27 @@ struct EntryDetailView: View {
                 } else {
                     Button("调整时间与备注") { edit = true }
                 }
+                if entry.end == nil { Button("修正结束时间") { edit = true } }
+                if entry.kind == .stay, let end = entry.end {
+                    Button("拆分这段停留") { splitDate = entry.start.addingTimeInterval(end.timeIntervalSince(entry.start) / 2); splitting = true }
+                    Button("合并连续的下一段") { if store.mergeNext(entry) { dismiss() } }
+                }
+                if let error = store.errorMessage { Text(error).foregroundStyle(.red) }
                 if entry.kind == .travel { Text("移动表示两次地点事件之间的时间，并非连续 GPS 轨迹。暂停前尚未到达的移动记录不会参与路线均值统计。").font(.footnote).foregroundStyle(.secondary) }
                 Button("删除记录", role: .destructive) { delete = true }
             }.navigationTitle("记录详情").navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
+                .sheet(isPresented: $splitting) {
+                    NavigationStack {
+                        Form {
+                            DatePicker("拆分时间", selection: $splitDate, in: entry.start...(entry.end ?? .now))
+                            Text("拆成同一地点的两段，之后可分别调整地点和备注。")
+                        }.navigationTitle("拆分停留").toolbar {
+                            ToolbarItem(placement: .cancellationAction) { Button("取消") { splitting = false } }
+                            ToolbarItem(placement: .confirmationAction) { Button("拆分") { if store.split(entry, at: splitDate) { splitting = false } }.disabled(splitDate <= entry.start || splitDate >= (entry.end ?? .now)) }
+                        }
+                    }
+                }
                 .sheet(isPresented: $edit) { EntryEditor(existing: entry) }
                 .confirmationDialog("删除这段记录？此操作无法撤销。", isPresented: $delete, titleVisibility: .visible) {
                     Button("删除", role: .destructive) { store.delete(entry); dismiss() }

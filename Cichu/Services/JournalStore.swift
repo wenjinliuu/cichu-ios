@@ -108,3 +108,39 @@ enum JournalError: LocalizedError {
     func delete(_ entry: JournalEntry) { context.delete(entry); commit() }
     func erase() { entries.forEach { context.delete($0) }; places.forEach { context.delete($0) }; commit() }
 }
+
+extension JournalStore {
+    func concerns(now: Date = .now) -> [JournalEntry] {
+        entries.filter {
+            guard $0.source == .automatic else { return false }
+            let duration = ($0.end ?? now).timeIntervalSince($0.start)
+            return duration > ($0.kind == .stay ? 86400 : 14400) ||
+                ($0.kind == .travel && $0.end != nil && $0.destinationID == nil)
+        }
+    }
+    func split(_ entry: JournalEntry, at date: Date) -> Bool {
+        guard let end = entry.end, entry.kind == .stay, date > entry.start, date < end else {
+            errorMessage = "只能在已结束停留的内部拆分。"; return false
+        }
+        entry.end = date; entry.sourceRaw = EntrySource.manual.rawValue
+        context.insert(JournalEntry(kind: .stay, placeID: entry.placeID, start: date, end: end, source: .manual, note: entry.note))
+        return commit()
+    }
+    func mergeNext(_ entry: JournalEntry) -> Bool {
+        let ordered = entries.sorted { $0.start < $1.start }
+        guard let index = ordered.firstIndex(where: { $0.id == entry.id }), index + 1 < ordered.count,
+              let end = entry.end else { errorMessage = "没有可合并的下一段记录。"; return false }
+        let next = ordered[index + 1]
+        guard entry.kind == .stay, next.kind == .stay, next.placeID == entry.placeID,
+              next.end != nil, abs(next.start.timeIntervalSince(end)) < 1 else {
+            errorMessage = "只支持合并时间连续、地点相同的已结束停留，不会补算空白时间。"; return false
+        }
+        entry.end = next.end; entry.sourceRaw = EntrySource.manual.rawValue
+        entry.note = [entry.note, next.note].filter { !$0.isEmpty }.joined(separator: "\n")
+        context.delete(next); return commit()
+    }
+    func confirm(_ entry: JournalEntry) {
+        // Explicit user verification turns the record into a manually reviewed record.
+        entry.sourceRaw = EntrySource.manual.rawValue; commit()
+    }
+}

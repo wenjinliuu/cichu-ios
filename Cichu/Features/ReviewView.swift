@@ -18,6 +18,7 @@ struct ReviewView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var period: ReviewPeriod = .week
     @State private var date = Date.now
+    @State private var poster = false
     @State private var selectedDay: Date?
     private var interval: DateInterval { period.interval(ending: date, earliest: store.entries.last?.start) }
     private var totals: [PlaceTotal] {
@@ -119,12 +120,14 @@ struct ReviewView: View {
                         }
                     }.navigationTitle("地点记忆")
                 }.frame(minHeight: 44)
+                Button("生成分享海报", systemImage: "photo") { poster = true }.buttonStyle(.borderedProminent).controlSize(.large)
                 ShareLink(item: "此处 · 看见时间，留在哪里。\n\(interval.start.formatted(date: .abbreviated, time: .omitted)) 至 \(min(interval.end, .now).formatted(date: .abbreviated, time: .omitted))\n记录了 \(TimeMath.duration(store.total(in: interval)))，在 \(totals.count) 个地点留下生活。") {
                     Label("分享这段时光", systemImage: "square.and.arrow.up").frame(maxWidth: .infinity, minHeight: 48)
                 }.buttonStyle(.bordered)
             }.padding(20).frame(maxWidth: 760)
         }.frame(maxWidth: .infinity).pageCanvas().toolbar(.hidden, for: .navigationBar)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: period)
+            .sheet(isPresented: $poster) { SharePosterView(interval: interval) }
             .onChange(of: period) { _, _ in selectedDay = nil }
     }
 }

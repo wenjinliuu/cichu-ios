@@ -65,6 +65,16 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "CF3414C8365CD07147CB1874";
 		};
+		"2BF2F2495CF8A60DE4CFD7FA" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Cichu/Features/RecordReviewView.swift";
+			"sourceTree" = "<group>";
+		};
+		"D5D965D62194090CB1519CF2" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "2BF2F2495CF8A60DE4CFD7FA";
+		};
 		"AB900D4B6248514A2F5ECF02" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -84,6 +94,26 @@
 		"FEED59D80F77B86E69211496" = {
 			"isa" = "PBXBuildFile";
 			"fileRef" = "DA5F0E918B8379AF5A3016DD";
+		};
+		"71581C393999E63D48E4E0C6" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Cichu/Features/SetupGuideView.swift";
+			"sourceTree" = "<group>";
+		};
+		"A2DDE45BE52AD3418501DF64" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "71581C393999E63D48E4E0C6";
+		};
+		"10050F22824A5B992C72BDC5" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Cichu/Features/SharePosterView.swift";
+			"sourceTree" = "<group>";
+		};
+		"54B9FF21999ABCD96CF605CD" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "10050F22824A5B992C72BDC5";
 		};
 		"7456641168486BD6261176B2" = {
 			"isa" = "PBXFileReference";
@@ -145,6 +175,16 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "C7F4996086F0A493ECFB0AF4";
 		};
+		"C66EF76CB70F2D5AF8D4DF36" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Cichu/Services/TransitionGate.swift";
+			"sourceTree" = "<group>";
+		};
+		"749BD963CA9322BC189BDE09" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "C66EF76CB70F2D5AF8D4DF36";
+		};
 		"1962291D172D8B6A6EABC899" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -164,6 +204,16 @@
 		"3BECE32E8C398AB3EADC2787" = {
 			"isa" = "PBXBuildFile";
 			"fileRef" = "8FFFCC243357AA562B620369";
+		};
+		"DDB0AE225887768EEBE810FD" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "CichuTests/TransitionGateTests.swift";
+			"sourceTree" = "<group>";
+		};
+		"A44E33EEABC8880E5022A066" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "DDB0AE225887768EEBE810FD";
 		};
 		"3DA388B13109E4229A87245D" = {
 			"isa" = "PBXFileReference";
@@ -223,14 +273,18 @@
 				"4833056B834387CDD0469FCF",
 				"825FFD940DF9E4E610D23F7F",
 				"CF3414C8365CD07147CB1874",
+				"2BF2F2495CF8A60DE4CFD7FA",
 				"AB900D4B6248514A2F5ECF02",
 				"DA5F0E918B8379AF5A3016DD",
+				"71581C393999E63D48E4E0C6",
+				"10050F22824A5B992C72BDC5",
 				"7456641168486BD6261176B2",
 				"EF98BC01EBAA13D4EFCC286D",
 				"E13A0138F4BBC93FDB8E40EE",
 				"8A4CAE7E5CE367E338FCDFFB",
 				"0A2A5D0B7DFFAB25A76D502E",
 				"C7F4996086F0A493ECFB0AF4",
+				"C66EF76CB70F2D5AF8D4DF36",
 				"3DA388B13109E4229A87245D",
 				"2917995C32910C03BF8CCA3D",
 				"59BD0A3FF43B32849B319E64",
@@ -243,6 +297,7 @@
 			"children" = (
 				"1962291D172D8B6A6EABC899",
 				"8FFFCC243357AA562B620369",
+				"DDB0AE225887768EEBE810FD",
 			);
 			"name" = "CichuTests";
 			"sourceTree" = "<group>";
@@ -266,14 +321,18 @@
 				"3C2F0BFBC2010A49F72092A5",
 				"C987D23C3974D3EFF194F563",
 				"796FDA4754B58B6307312EFA",
+				"D5D965D62194090CB1519CF2",
 				"36123D2CC98F9C8819C454DE",
 				"FEED59D80F77B86E69211496",
+				"A2DDE45BE52AD3418501DF64",
+				"54B9FF21999ABCD96CF605CD",
 				"6D6E152028E4A9BC02EE17A8",
 				"B2148E6DEE208380266167D1",
 				"0CD7DE454367B51CD3C766CB",
 				"3698B4D7CB4B827F7B2DC39B",
 				"7C4A71DDB27BB249BC08E024",
 				"93FDF96FCC0248894C145652",
+				"749BD963CA9322BC189BDE09",
 			);
 			"runOnlyForDeploymentPostprocessing" = 0;
 		};
@@ -299,6 +358,7 @@
 			"files" = (
 				"6ED78660C586A60B39DCF313",
 				"3BECE32E8C398AB3EADC2787",
+				"A44E33EEABC8880E5022A066",
 			);
 			"runOnlyForDeploymentPostprocessing" = 0;
 		};

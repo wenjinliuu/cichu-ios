@@ -7,6 +7,8 @@ import Foundation
 @MainActor @Observable final class LocationService: NSObject, CLLocationManagerDelegate {
     private let manager = CLLocationManager()
     private let store: JournalStore
+    private var gate = TransitionGate()
+    private var verificationTask: Task<Void, Never>?
     private let defaults: UserDefaults
     private(set) var authorization: CLAuthorizationStatus = .notDetermined
     private(set) var enabled: Bool
@@ -24,6 +26,8 @@ import Foundation
     init(store: JournalStore, defaults: UserDefaults = .standard) {
         self.store = store; self.defaults = defaults
         enabled = !store.isDemo && defaults.bool(forKey: "trackingEnabled")
+        if !store.isDemo, let data = defaults.data(forKey: "transitionGate"),
+           let saved = try? JSONDecoder().decode(TransitionGate.self, from: data) { gate = saved }
         super.init()
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
@@ -38,7 +42,7 @@ import Foundation
             if authorization == .notDetermined { manager.requestWhenInUseAuthorization() }
             else { refreshRegions() }
         } else {
-            stopMonitoring(); store.stop()
+            clearCandidate(); stopMonitoring(); store.stop()
         }
     }
     func requestBackgroundPermission() {
@@ -81,11 +85,12 @@ import Foundation
         manager.stopMonitoringSignificantLocationChanges()
     }
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        guard !store.isDemo else { return }
         authorization = manager.authorizationStatus
         if authorized {
             if enabled { refreshRegions() } else { manager.requestLocation() }
         } else if authorization == .denied || authorization == .restricted {
-            stopMonitoring(); store.stop()
+            clearCandidate(); stopMonitoring(); store.stop()
             statusMessage = "定位权限不可用。仍可添加地点和手动补记。"
         }
     }
@@ -99,20 +104,45 @@ import Foundation
             let distance = fix.distance(from: CLLocation(latitude: place.latitude, longitude: place.longitude))
             return distance + fix.horizontalAccuracy <= place.radius ? (place, distance) : nil
         }.sorted { $0.1 < $1.1 }
-        if let place = matches.first?.0 { store.arrive(place) }
+        // Keep the current place while overlapping fences still contain it.
+        if let active = store.active, active.kind == .stay,
+           matches.contains(where: { $0.0.id == active.placeID }) { clearCandidate(); return }
+        if let place = matches.first?.0 { consider(place.id) }
         else if let active = store.active, active.kind == .stay, let place = store.place(active.placeID) {
             let distance = fix.distance(from: CLLocation(latitude: place.latitude, longitude: place.longitude))
-            if distance - fix.horizontalAccuracy > place.radius + 50 { store.depart(place.id) }
+            if distance - fix.horizontalAccuracy > place.radius + 50 { consider(nil) }
+            else { clearCandidate() }
+        } else { clearCandidate() }
+    }
+    private func clearCandidate() {
+        gate.reset(); defaults.removeObject(forKey: "transitionGate")
+        verificationTask?.cancel(); verificationTask = nil
+    }
+    private func consider(_ id: UUID?) {
+        let current = store.active?.kind == .stay ? store.active?.placeID : nil
+        if gate.observe(placeID: id, currentID: current, at: .now) {
+            if let id, let place = store.place(id) { store.arrive(place) }
+            else if let current { store.depart(current) }
+            clearCandidate()
+        } else {
+            if let data = try? JSONEncoder().encode(gate) { defaults.set(data, forKey: "transitionGate") }
+            guard gate.candidate != nil, verificationTask == nil else { return }
+            verificationTask = Task { @MainActor [weak self] in
+                do { try await Task.sleep(for: .seconds(95)) } catch { return }
+                guard let self, self.enabled, self.authorized else { return }
+                self.verificationTask = nil
+                self.manager.requestLocation()
+            }
         }
     }
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
-        guard enabled, authorized, let id = UUID(uuidString: region.identifier),
-              let place = store.place(id) else { return }
-        store.arrive(place)
+        // A fence callback requests a measured fix; it does not override an overlapping place.
+        guard enabled, authorized else { return }
+        manager.requestLocation()
     }
     func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
-        guard enabled, authorized, let id = UUID(uuidString: region.identifier) else { return }
-        store.depart(id)
+        guard enabled, authorized else { return }
+        manager.requestLocation()
     }
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         statusMessage = "暂时无法获取位置，请稍后重试。"
