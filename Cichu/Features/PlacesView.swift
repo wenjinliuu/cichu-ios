@@ -13,6 +13,7 @@ struct PlacesView: View {
     @Environment(JournalStore.self) private var store
     @Environment(LocationService.self) private var location
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var camera: MapCameraPosition = .automatic
     @State private var sheet: MapSheet?
     @State private var focusedID: UUID?
@@ -46,7 +47,7 @@ struct PlacesView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(alignment: .trailing, spacing: 12) {
                 HStack(spacing: 0) {
-                    Button { satellite.toggle() } label: { Image(systemName: "square.3.layers.3d").frame(width: 48, height: 48) }.accessibilityLabel("切换地图样式")
+                    Button { satellite.toggle() } label: { Image(systemName: "square.3.layers.3d").frame(width: 48, height: 48) }.accessibilityLabel("切换地图样式").accessibilityValue(satellite ? "卫星地图" : "标准地图")
                     Divider().frame(height: 20)
                     Button {
                         location.locateOnce()
@@ -62,10 +63,14 @@ struct PlacesView: View {
                             ForEach(store.visiblePlaces) { place in
                                 Button { select(place) } label: {
                                     Label(place.name, systemImage: place.kind.symbol).font(.subheadline.weight(.medium))
-                                        .padding(.horizontal, 16).frame(minHeight: 44)
+                                        .lineLimit(2).multilineTextAlignment(.leading)
+                                        .frame(maxWidth: 220, alignment: .leading)
+                                        .padding(.horizontal, 16).padding(.vertical, 10).frame(minHeight: 44)
                                         .foregroundStyle(focusedID == place.id ? Theme.accent : Theme.ink)
                                         .background(focusedID == place.id ? Theme.highlight : Theme.surface, in: Capsule())
                                 }.buttonStyle(PressStyle())
+                                    .accessibilityLabel("查看\(place.name)")
+                                    .accessibilityAddTraits(focusedID == place.id ? .isSelected : [])
                             }
                         }.padding(.horizontal, 20).padding(.vertical, 12)
                     }.scrollIndicators(.hidden).background(.regularMaterial)
@@ -80,7 +85,7 @@ struct PlacesView: View {
                     PlaceDetailView(place: place).toolbar {
                         ToolbarItem(placement: .confirmationAction) { Button("完成") { sheet = nil } }
                     }
-                }.presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
+                }.presentationDetents(typeSize.isAccessibilitySize ? [.large] : [.medium, .large]).presentationDragIndicator(.visible)
             }
         }
     }

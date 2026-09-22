@@ -23,6 +23,18 @@ enum Motion {
     static let expand = Animation.spring(duration: 0.28, bounce: 0.08)
 }
 
+struct AdaptiveRow<Content: View>: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
+    var spacing: CGFloat = 12
+    @ViewBuilder var content: Content
+    var body: some View {
+        let layout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: spacing))
+            : AnyLayout(HStackLayout(alignment: .top, spacing: spacing))
+        layout { content }
+    }
+}
+
 struct Card<Content: View>: View {
     @ViewBuilder var content: Content
     var body: some View {
@@ -128,14 +140,17 @@ private struct UndoNotice: View {
     @Environment(JournalStore.self) private var store
     var body: some View {
         if let label = store.undoLabel {
-            HStack(spacing: 12) {
-                Text(label).font(.subheadline)
-                Spacer(minLength: 8)
-                Button("撤销") { store.undoLastEdit() }.font(.subheadline.weight(.semibold)).frame(minHeight: 44)
-                Button { store.dismissUndo() } label: {
-                    Image(systemName: "xmark").frame(width: 44, height: 44)
-                }.accessibilityLabel("关闭撤销提示")
-            }.padding(.leading, 20).background(Theme.surface)
+            AdaptiveRow(spacing: 4) {
+                Text(label).font(.subheadline).fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                HStack(spacing: 16) {
+                    Button("撤销") { store.undoLastEdit() }
+                        .font(.subheadline.weight(.semibold)).frame(minWidth: 44, minHeight: 44)
+                    Button { store.dismissUndo() } label: {
+                        Image(systemName: "xmark").frame(width: 44, height: 44)
+                    }.accessibilityLabel("关闭撤销提示")
+                }
+            }.padding(.horizontal, 20).padding(.vertical, 8).background(Theme.surface)
         }
     }
 }

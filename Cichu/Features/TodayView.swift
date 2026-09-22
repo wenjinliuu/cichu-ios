@@ -48,9 +48,16 @@ struct TodayView: View {
                     }
                 }
                 VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Text("最近记录").font(.headline); Spacer()
-                        NavigationLink("全部") { DayJournalView(date: selectedDate) }.font(.subheadline).frame(minHeight: 44)
+                    AdaptiveRow {
+                        Text("最近记录").font(.headline).frame(maxWidth: .infinity, alignment: .leading)
+                        HStack(spacing: 20) {
+                            Button { sheet = .entry } label: {
+                                Label("补记", systemImage: "plus").frame(minWidth: 44, minHeight: 44)
+                            }.disabled(store.visiblePlaces.isEmpty)
+                            NavigationLink { DayJournalView(date: selectedDate) } label: {
+                                Text("全部").frame(minWidth: 44, minHeight: 44)
+                            }
+                        }.font(.subheadline).frame(minHeight: 44)
                     }
                     if store.entries(in: interval).isEmpty {
                         Text("这一天还没有记录。").foregroundStyle(Theme.quiet).font(.subheadline).padding(.vertical, 12)
@@ -61,7 +68,6 @@ struct TodayView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
-                        Button("补记时间", systemImage: "plus") { sheet = .entry }.disabled(store.visiblePlaces.isEmpty)
                         Button("添加地点", systemImage: "mappin.and.ellipse") { sheet = .place }
                         Button("分享这一天", systemImage: "square.and.arrow.up") { sheet = .share }
                     } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44) }.accessibilityLabel("今日操作")
@@ -142,16 +148,27 @@ struct DaySummary: View {
             Text("时间分布").font(.headline)
             TimelineView(.periodic(from: .now, by: 60)) { timeline in
                 let entries = store.entries(in: interval, now: timeline.date)
-                Chart(entries) { entry in
-                    BarMark(xStart: .value("开始", max(entry.start, interval.start)),
-                            xEnd: .value("结束", min(entry.end ?? timeline.date, interval.end)), y: .value("记录", "时间"))
-                    .foregroundStyle(entry.kind == .travel ? Theme.quiet.opacity(0.35) : Theme.color(store.place(entry.placeID)?.kind ?? .other))
-                    .cornerRadius(3)
-                    .accessibilityLabel(store.title(entry))
-                    .accessibilityValue(TimeMath.duration(entry.duration(in: interval, now: timeline.date)))
+                Chart {
+                    ForEach(entries) { entry in
+                        BarMark(xStart: .value("开始", max(entry.start, interval.start)),
+                                xEnd: .value("结束", min(entry.end ?? timeline.date, interval.end)), y: .value("记录", "时间"))
+                        .foregroundStyle(entry.kind == .travel ? Theme.quiet : Theme.color(store.place(entry.placeID)?.kind ?? .other))
+                        .cornerRadius(3)
+                        .accessibilityLabel(store.title(entry))
+                        .accessibilityValue(TimeMath.duration(entry.duration(in: interval, now: timeline.date)))
+                    }
+                    if let selectedTime {
+                        RuleMark(x: .value("选中时间", selectedTime))
+                            .foregroundStyle(Theme.ink).lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                            .accessibilityHidden(true)
+                    }
                 }.chartXScale(domain: interval.start...interval.end).chartYAxis(.hidden)
                     .chartXAxis { AxisMarks(values: .stride(by: .hour, count: 6)) { AxisValueLabel(format: .dateTime.hour(.defaultDigits(amPM: .omitted))) } }
                     .frame(height: 72).chartXSelection(value: $selectedTime)
+                if let selectedTime {
+                    Text(selectedTime.formatted(date: .omitted, time: .shortened))
+                        .font(.caption.monospacedDigit()).foregroundStyle(Theme.quiet)
+                }
                 if let selectedTime, selectedTime < min(interval.end, timeline.date) {
                     if let entry = entries.first(where: { $0.start <= selectedTime && ($0.end ?? timeline.date) > selectedTime }) {
                         Button { destination = .entry(entry) } label: {
@@ -166,12 +183,10 @@ struct DaySummary: View {
                         }.font(.subheadline).frame(minHeight: 44).disabled(store.visiblePlaces.isEmpty)
                     }
                 } else {
-                    Text("轻点或拖动时间轴，选择记录或空白时间。") .font(.caption).foregroundStyle(Theme.quiet)
+                    Text("轻点时间轴查看；也可在下方记录列表中修正或补记。")
+                        .font(.caption).foregroundStyle(Theme.quiet)
                 }
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: 24) { metrics(timeline.date) }
-                    VStack(alignment: .leading, spacing: 20) { metrics(timeline.date) }
-                }
+                AdaptiveRow(spacing: 24) { metrics(timeline.date) }
             }
             DisclosureGroup("如何计算", isExpanded: $explanation) {
                 Text("空白是未记录的时间。移动时长由离开与到达计算，不代表连续 GPS 轨迹。")
@@ -223,18 +238,22 @@ struct EntryList: View {
         LazyVStack(spacing: 0) {
             ForEach(visible) { entry in
                 Button { editing = entry } label: {
-                    HStack(alignment: .top, spacing: 16) {
-                        Text(max(entry.start, interval.start).formatted(date: .omitted, time: .shortened))
-                            .font(.caption.monospacedDigit()).foregroundStyle(Theme.quiet).frame(minWidth: 46, alignment: .leading)
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(store.title(entry)).font(.body.weight(.medium)).multilineTextAlignment(.leading)
-                            Text(TimeMath.duration(entry.duration(in: interval))).font(.subheadline).foregroundStyle(Theme.quiet)
-                            if !entry.note.isEmpty { Text(entry.note).font(.caption).foregroundStyle(Theme.quiet).lineLimit(2) }
+                    HStack(alignment: .top, spacing: 12) {
+                        AdaptiveRow(spacing: 12) {
+                            Text(max(entry.start, interval.start).formatted(date: .omitted, time: .shortened))
+                                .font(.caption.monospacedDigit()).foregroundStyle(Theme.quiet).frame(minWidth: 46, alignment: .leading)
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(store.title(entry)).font(.body.weight(.medium)).multilineTextAlignment(.leading)
+                                Text(TimeMath.duration(entry.duration(in: interval))).font(.subheadline).foregroundStyle(Theme.quiet)
+                                if !entry.note.isEmpty { Text(entry.note).font(.caption).foregroundStyle(Theme.quiet).lineLimit(2) }
+                            }
                         }
                         Spacer(minLength: 0)
-                        Image(systemName: "chevron.right").font(.caption2).foregroundStyle(Theme.quiet)
+                        Image(systemName: "chevron.right").font(.caption2).foregroundStyle(Theme.quiet).accessibilityHidden(true)
                     }.padding(.vertical, 16).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
                 }.buttonStyle(PressStyle()).foregroundStyle(Theme.ink)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityHint("打开记录详情与修正")
                 Divider().opacity(0.5)
             }
         }.sheet(item: $editing) { EntryDetailView(entry: $0) }
@@ -242,17 +261,32 @@ struct EntryList: View {
 }
 
 struct DayJournalView: View {
+    @Environment(JournalStore.self) private var store
+    @State private var adding = false
     let date: Date
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 Text(date.formatted(date: .complete, time: .omitted)).font(.subheadline).foregroundStyle(Theme.quiet)
-                NavigationLink { DayReplayView(date: date) } label: {
-                    Label("地图回看", systemImage: "play.circle").frame(minHeight: 44)
+                if store.entries(in: TimeMath.day(date)).isEmpty {
+                    EmptyCard(title: "这一天，还是空白", message: store.visiblePlaces.isEmpty
+                        ? "先在地点页添加一个熟悉的地方，再补上这一天的时间。"
+                        : "记得去了哪里？可以手动补上一段时间。", symbol: "clock")
+                } else {
+                    NavigationLink { DayReplayView(date: date) } label: {
+                        Label("地图回看", systemImage: "play.circle").frame(minHeight: 44)
+                    }
+                    EntryList(interval: TimeMath.day(date))
                 }
-                EntryList(interval: TimeMath.day(date))
             }.padding(24).frame(maxWidth: 680)
         }.frame(maxWidth: .infinity).pageCanvas().navigationTitle("这一天").navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("补记", systemImage: "plus") { adding = true }
+                        .disabled(store.visiblePlaces.isEmpty)
+                }
+            }
+            .sheet(isPresented: $adding) { EntryEditor(date: date) }
     }
 }
 

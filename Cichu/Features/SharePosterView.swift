@@ -29,21 +29,38 @@ struct SharePosterView: View {
             ScrollView {
                 VStack(spacing: 20) {
                     Toggle("包含自定义地点名称", isOn: $includeNames)
-                    Text("默认仅展示地点类别，不含地址、坐标、备注或具体到访时刻。打开名称开关后，请自行检查是否包含敏感信息。")
-                        .font(.footnote).foregroundStyle(.secondary)
-                    ShareLink(item: "此处 · 看见时间，留在哪里。\n已记录 \(TimeMath.duration(store.total(in: interval)))，移动 \(TimeMath.duration(store.total(in: interval, kind: .travel)))。") {
-                        Label("只分享文字", systemImage: "text.alignleft").font(.subheadline).frame(minHeight: 44)
-                    }
+                    Text(includeNames ? "已包含地点名称，分享前请检查。" : "只展示地点类别，保留一点私密。")
+                        .font(.footnote).foregroundStyle(Theme.quiet).frame(maxWidth: .infinity, alignment: .leading)
+                    DisclosureGroup("分享内容说明") {
+                        Text("海报不含地址、坐标、备注或具体到访时刻。关闭名称开关时，同类地点会合并显示。")
+                            .font(.footnote).foregroundStyle(Theme.quiet).padding(.top, 8)
+                    }.font(.footnote)
                     if let image {
                         Image(uiImage: image).resizable().scaledToFit().clipShape(RoundedRectangle(cornerRadius: 24))
                             .accessibilityLabel("时间分配分享海报")
-                        ShareLink(item: Image(uiImage: image), preview: SharePreview("此处 · 时间留在哪里", image: Image(uiImage: image))) {
-                            Label("分享图片", systemImage: "square.and.arrow.up").frame(maxWidth: .infinity, minHeight: 48)
-                        }.buttonStyle(PrimaryButtonStyle())
-                    } else { ProgressView("准备海报") }
-                    if let error { Text(error).foregroundStyle(.red) }
+                            .accessibilityValue(rows.map { "\($0.title)，\(TimeMath.duration($0.seconds))" }.joined(separator: "；"))
+                    } else if let error {
+                        VStack(alignment: .leading, spacing: 12) {
+                            EmptyCard(title: "海报暂时没有生成", message: error, symbol: "photo")
+                            Button("重新生成", systemImage: "arrow.clockwise", action: render)
+                                .buttonStyle(.bordered).frame(minHeight: 44)
+                        }.frame(maxWidth: .infinity, alignment: .leading)
+                    } else { ProgressView("准备海报").padding(.vertical, 40) }
                 }.padding(20).frame(maxWidth: 480)
             }.frame(maxWidth: .infinity).pageCanvas().navigationTitle("分享这段时光").navigationBarTitleDisplayMode(.inline)
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    VStack(spacing: 8) {
+                        if let image {
+                            ShareLink(item: Image(uiImage: image), preview: SharePreview("此处 · 时间留在哪里", image: Image(uiImage: image))) {
+                                Label("分享图片", systemImage: "square.and.arrow.up").frame(maxWidth: .infinity)
+                            }.buttonStyle(PrimaryButtonStyle())
+                        }
+                        ShareLink(item: "此处 · 看见时间，留在哪里。\n已记录 \(TimeMath.duration(store.total(in: interval)))，移动 \(TimeMath.duration(store.total(in: interval, kind: .travel)))。") {
+                            Label("只分享文字", systemImage: "text.alignleft").font(.subheadline).frame(minHeight: 44)
+                        }
+                    }.padding(.horizontal, 20).padding(.vertical, 12).frame(maxWidth: 480)
+                        .frame(maxWidth: .infinity).background(Theme.surface)
+                }
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
                 .task(id: includeNames) { render() }
         }
@@ -55,7 +72,7 @@ struct SharePosterView: View {
             .environment(\.colorScheme, .light).environment(\.dynamicTypeSize, .large))
         renderer.scale = 3
         image = renderer.uiImage
-        error = image == nil ? "图片生成失败，请关闭后重试。" : nil
+        error = image == nil ? "可以重新生成，也可以先分享文字摘要。" : nil
     }
 }
 

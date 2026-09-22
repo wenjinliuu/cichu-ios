@@ -15,7 +15,7 @@ struct RecordReviewView: View {
                     Text(entry.start.formatted(date: .abbreviated, time: .shortened)).font(.caption)
                     Text(entry.kind == .stay ? "持续超过 24 小时，请核对是否漏记离开。" : "移动过长或缺少终点，请核对。")
                         .font(.subheadline).foregroundStyle(.secondary)
-                    HStack {
+                    AdaptiveRow {
                         Button("查看并修正") { selected = entry }.buttonStyle(.bordered)
                         Button("记录无误") { store.confirm(entry) }.buttonStyle(.bordered)
                             .disabled(entry.end == nil)

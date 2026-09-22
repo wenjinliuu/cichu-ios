@@ -16,6 +16,7 @@ struct RouteTotal: Identifiable {
 struct ReviewView: View {
     @Environment(JournalStore.self) private var store
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var period: ReviewPeriod = .week
     @State private var date = Date.now
     @State private var poster = false
@@ -45,12 +46,24 @@ struct ReviewView: View {
         }
         return result
     }
+    private var bucketComponent: Calendar.Component { period == .year || period == .all ? .month : .day }
+    private func bucketTotal(_ date: Date) -> Double {
+        guard let range = Calendar.current.dateInterval(of: bucketComponent, for: date) else { return 0 }
+        let start = max(range.start, interval.start)
+        let end = min(range.end, interval.end)
+        return end > start ? store.total(in: DateInterval(start: start, end: end)) : 0
+    }
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 32) {
                 VStack(spacing: 16) {
-                    Picker("回顾范围", selection: $period) { ForEach(ReviewPeriod.allCases) { Text($0.rawValue).tag($0) } }
-                        .pickerStyle(.segmented)
+                    if typeSize.isAccessibilitySize {
+                        Picker("回顾范围", selection: $period) { ForEach(ReviewPeriod.allCases) { Text($0.rawValue).tag($0) } }
+                            .pickerStyle(.menu).frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
+                        Picker("回顾范围", selection: $period) { ForEach(ReviewPeriod.allCases) { Text($0.rawValue).tag($0) } }
+                            .pickerStyle(.segmented)
+                    }
                     if period != .all { DatePicker("回顾日期", selection: $date, in: ...Date.now, displayedComponents: .date).font(.subheadline) }
                 }
                 VStack(alignment: .leading, spacing: 12) {
@@ -58,7 +71,8 @@ struct ReviewView: View {
                         Text("这段时光，最多留在\(first.place.name)。")
                             .font(.title2.weight(.medium)).fixedSize(horizontal: false, vertical: true)
                     } else {
-                        Text("等生活，慢慢留下轮廓。") .font(.title2.weight(.medium))
+                        Text(store.total(in: interval) > 0 ? "也记住了，路上的时间。" : "等生活，慢慢留下轮廓。")
+                            .font(.title2.weight(.medium))
                     }
                     Text("已记录 \(TimeMath.duration(store.total(in: interval))) · \(totals.count) 个地点")
                         .font(.subheadline).foregroundStyle(Theme.quiet)
@@ -69,46 +83,66 @@ struct ReviewView: View {
                 if !totals.isEmpty {
                     VStack(alignment: .leading, spacing: 20) {
                         Text("停留分配").font(.headline)
-                        Chart(totals) { total in
-                            SectorMark(angle: .value("停留时间", total.seconds), innerRadius: .ratio(0.82), angularInset: 2)
-                                .foregroundStyle(by: .value("地点", total.place.id.uuidString)).cornerRadius(3)
-                                .accessibilityLabel(total.place.name).accessibilityValue(TimeMath.duration(total.seconds))
-                        }
-                        .chartForegroundStyleScale(domain: totals.map { $0.place.id.uuidString }, range: totals.map { Theme.color($0.place.kind) })
-                        .chartLegend(.hidden).frame(height: 156)
-                        .chartBackground { _ in
-                            VStack(spacing: 4) {
-                                Text("\(totals.count)").font(.title.weight(.medium)).monospacedDigit()
-                                Text("个地点").font(.caption).foregroundStyle(Theme.quiet)
+                        if !typeSize.isAccessibilitySize {
+                            Chart(totals) { total in
+                                SectorMark(angle: .value("停留时间", total.seconds), innerRadius: .ratio(0.82), angularInset: 2)
+                                    .foregroundStyle(by: .value("地点", total.place.id.uuidString)).cornerRadius(3)
+                                    .accessibilityLabel(total.place.name).accessibilityValue(TimeMath.duration(total.seconds))
+                            }
+                            .chartForegroundStyleScale(domain: totals.map { $0.place.id.uuidString }, range: totals.map { Theme.color($0.place.kind) })
+                            .chartLegend(.hidden).frame(height: 156)
+                            .chartBackground { _ in
+                                VStack(spacing: 4) {
+                                    Text("\(totals.count)").font(.title.weight(.medium)).monospacedDigit()
+                                    Text("个地点").font(.caption).foregroundStyle(Theme.quiet)
+                                }
                             }
                         }
                         ForEach(totals) { total in
                             NavigationLink { PlaceDetailView(place: total.place) } label: {
                                 HStack(spacing: 12) {
                                     Image(systemName: total.place.kind.symbol).foregroundStyle(Theme.color(total.place.kind)).frame(width: 24).accessibilityHidden(true)
-                                    Text(total.place.name).foregroundStyle(Theme.ink)
-                                    Spacer()
-                                    Text(TimeMath.duration(total.seconds)).font(.subheadline.monospacedDigit()).foregroundStyle(Theme.quiet)
+                                    AdaptiveRow {
+                                        Text(total.place.name).foregroundStyle(Theme.ink)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                        Text(TimeMath.duration(total.seconds)).font(.subheadline.monospacedDigit()).foregroundStyle(Theme.quiet)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+                                    Image(systemName: "chevron.right").font(.caption2).foregroundStyle(Theme.quiet).accessibilityHidden(true)
                                 }.padding(.vertical, 6).frame(minHeight: 44)
                             }.buttonStyle(PressStyle()).accessibilityElement(children: .combine)
                         }
                         Divider().opacity(0.5)
-                        HStack { Text("移动时间"); Spacer(); Text(TimeMath.duration(store.total(in: interval, kind: .travel))).monospacedDigit() }
+                        AdaptiveRow {
+                            Text("移动时间").frame(maxWidth: .infinity, alignment: .leading)
+                            Text(TimeMath.duration(store.total(in: interval, kind: .travel))).monospacedDigit()
+                        }
                             .font(.subheadline).foregroundStyle(Theme.quiet)
                     }
+                }
+                if store.total(in: interval) > 0 {
                     VStack(alignment: .leading, spacing: 20) {
                         Text(period == .year || period == .all ? "每个月的时间" : "每天的时间").font(.headline)
-                        Chart(buckets, id: \.self) { bucket in
-                            let component: Calendar.Component = period == .year || period == .all ? .month : .day
-                            let range = Calendar.current.dateInterval(of: component, for: bucket)!
-                            BarMark(x: .value("日期", bucket, unit: component), y: .value("小时", store.total(in: range) / 3600))
-                                .foregroundStyle(Theme.accent.opacity(0.75)).cornerRadius(3)
+                        Chart {
+                            ForEach(buckets, id: \.self) { bucket in
+                                BarMark(x: .value("日期", bucket, unit: bucketComponent), y: .value("小时", bucketTotal(bucket) / 3600))
+                                    .foregroundStyle(Theme.accent).cornerRadius(3)
+                                    .accessibilityLabel(bucket.formatted(date: .abbreviated, time: .omitted))
+                                    .accessibilityValue(TimeMath.duration(bucketTotal(bucket)))
+                            }
+                            if let selectedDay {
+                                RuleMark(x: .value("选中日期", selectedDay, unit: bucketComponent))
+                                    .foregroundStyle(Theme.ink).lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                                    .accessibilityHidden(true)
+                            }
                         }.frame(height: 168).chartXSelection(value: $selectedDay)
+                            .chartYAxisLabel("小时")
                             .animation(reduceMotion ? nil : Motion.change, value: period)
-                        if let selectedDay {
-                            Text("\(selectedDay.formatted(date: .abbreviated, time: .omitted)) · \(TimeMath.duration(store.total(in: Calendar.current.dateInterval(of: period == .year || period == .all ? .month : .day, for: selectedDay)!)))")
-                                .font(.footnote).foregroundStyle(Theme.quiet)
-                        }
+                        Text(selectedDay.map {
+                            "\($0.formatted(date: .abbreviated, time: .omitted)) · \(TimeMath.duration(bucketTotal($0)))"
+                        } ?? "选择柱形，查看这段时间的记录总时长。")
+                            .font(.footnote).foregroundStyle(Theme.quiet)
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                     }
                 }
                 DisclosureGroup("常走的路线") {
@@ -141,5 +175,6 @@ struct ReviewView: View {
             }
             .sheet(isPresented: $poster) { SharePosterView(interval: interval) }
             .onChange(of: period) { _, _ in selectedDay = nil }
+            .onChange(of: date) { _, _ in selectedDay = nil }
     }
 }
