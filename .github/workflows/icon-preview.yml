@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   icon:
-    uses: wenjinliuu/ios-ci-workflows/.github/workflows/app-icon.yml@469627ad41f6c606136824f9043520f870e135c0
+    uses: wenjinliuu/ios-ci-workflows/.github/workflows/app-icon.yml@1041aed9c6c57d266ce19e40bc2ffc9dbf615a5a
     with:
       workdir: .
       project: Cichu.xcodeproj
