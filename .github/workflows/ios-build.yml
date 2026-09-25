@@ -32,7 +32,7 @@ concurrency:
 
 jobs:
   preview:
-    uses: wenjinliuu/ios-ci-workflows/.github/workflows/agent-preview.yml@9146c98b2fbfb3bb88d1f2435aa56d0d13021dda
+    uses: wenjinliuu/ios-ci-workflows/.github/workflows/agent-preview.yml@bb2e5a343c7f43c38798ec006f94df6f939e36fa
     with:
       workdir: .
       project: Cichu.xcodeproj
@@ -44,6 +44,6 @@ jobs:
       ios_runtime: ${{ inputs.ios_runtime || '26' }}
       live_preview: ${{ inputs.live_preview || false }}
       preview_minutes: ${{ fromJSON(format('{0}', inputs.preview_minutes || '12')) }}
-      ci_revision: 9146c98b2fbfb3bb88d1f2435aa56d0d13021dda
+      ci_revision: bb2e5a343c7f43c38798ec006f94df6f939e36fa
     secrets:
       AGENT_PREVIEW_PASSWORD: ${{ secrets.AGENT_PREVIEW_PASSWORD }}
