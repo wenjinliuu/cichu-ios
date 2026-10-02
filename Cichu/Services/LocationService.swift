@@ -117,7 +117,9 @@ import UIKit
             if authorization != .authorizedAlways, monitoring { driver.stopMonitoringVisits(); driver.stopMonitoringSignificantLocationChanges(); monitoring = false }
             if enabled { refreshRegions() }; requestFix()
         } else if authorization == .denied || authorization == .restricted {
-            stopMonitoring(); store.active?.needsReview = true; store.stop(); statusMessage = "定位权限不可用。仍可添加地点和手动补记。"
+            stopMonitoring()
+            if let active = store.active, active.source == .automatic { active.needsReview = true; store.stop() }
+            statusMessage = "定位权限不可用。仍可添加地点和手动补记。"
         }
     }
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {

@@ -75,6 +75,22 @@ import CoreLocation
         service.handleFix(CLLocation(latitude: 31, longitude: 121))
         XCTAssertNil(store.active)
     }
+    func testPermissionDenialStopsOnlyAutomaticSessions() throws {
+        let (_, store, service, driver) = try makeTracking()
+        let place = try XCTUnwrap(store.places.first)
+        store.arrive(place, at: .now.addingTimeInterval(-60), source: .manual)
+        let manualID = store.active?.id
+        driver.authorization = .denied; service.authorizationChanged()
+        XCTAssertEqual(store.active?.id, manualID)
+        XCTAssertEqual(store.active?.source, .manual)
+        store.stop()
+        driver.authorization = .authorizedAlways; service.authorizationChanged()
+        store.arrive(place)
+        let automaticID = store.active?.id
+        driver.authorization = .denied; service.authorizationChanged()
+        XCTAssertNil(store.active)
+        XCTAssertTrue(store.entries.first { $0.id == automaticID }?.needsReview == true)
+    }
     private func makeTracking() throws -> (ModelContainer, JournalStore, LocationService, MockLocationDriver) {
         let schema = Schema([Place.self, JournalEntry.self, LocationObservation.self])
         let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)])
