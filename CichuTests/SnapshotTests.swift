@@ -20,7 +20,7 @@ import SwiftData
         try snapshot(TodayView(date: date).environment(store).environment(location).environment(\.dynamicTypeSize, .accessibility1), name: "today-large-text", scheme: .light)
     }
     private func snapshot<V: View>(_ view: V, name: String, scheme: ColorScheme) throws {
-        let controller = UIHostingController(rootView: view.environment(\.colorScheme, scheme).environment(\.locale, Locale(identifier: "zh_CN")).environment(\.accessibilityReduceMotion, true).tint(Theme.accentText))
+        let controller = UIHostingController(rootView: view.environment(\.colorScheme, scheme).environment(\.locale, Locale(identifier: "zh_CN")).tint(Theme.accentText))
         let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
         window.rootViewController = controller; window.makeKeyAndVisible()
         defer { window.isHidden = true }
@@ -44,7 +44,10 @@ import SwiftData
     private func pixels(_ image: UIImage) throws -> [UInt8] {
         let cg = try XCTUnwrap(image.cgImage)
         var bytes = [UInt8](repeating: 0, count: cg.width * cg.height * 4)
-        let context = try XCTUnwrap(CGContext(data: &bytes, width: cg.width, height: cg.height, bitsPerComponent: 8, bytesPerRow: cg.width * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
-        context.draw(cg, in: CGRect(x: 0, y: 0, width: CGFloat(cg.width), height: CGFloat(cg.height))); return bytes
+        try bytes.withUnsafeMutableBytes { buffer in
+            let context = try XCTUnwrap(CGContext(data: buffer.baseAddress, width: cg.width, height: cg.height, bitsPerComponent: 8, bytesPerRow: cg.width * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+            context.draw(cg, in: CGRect(x: 0, y: 0, width: CGFloat(cg.width), height: CGFloat(cg.height)))
+        }
+        return bytes
     }
 }
