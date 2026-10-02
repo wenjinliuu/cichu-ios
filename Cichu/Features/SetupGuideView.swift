@@ -18,8 +18,8 @@ struct SetupGuideView: View {
                         .buttonStyle(PrimaryButtonStyle()).controlSize(.large)
                     step("2", "选择自动记录", detail: "开启后先请求使用期间定位；也可以跳过，完全手动记录。", done: location.enabled && location.authorized)
                     Button("开启自动记录") { location.setEnabled(true) }
-                        .buttonStyle(.bordered).disabled(store.visiblePlaces.isEmpty || store.isDemo)
-                    step("3", "让后台记录继续", detail: "如需锁屏后识别到达和离开，请允许始终定位，并在系统设置开启精确位置。", done: location.authorization == .authorizedAlways)
+                        .buttonStyle(.bordered).disabled(store.isDemo)
+                    step("3", "让后台记录继续", detail: "如需锁屏后识别到达和离开，请允许始终定位，并在系统设置开启精确位置。", done: location.backgroundReady)
                     if location.authorization == .authorizedWhenInUse {
                         Button("允许始终定位") { location.requestBackgroundPermission() }.buttonStyle(.bordered)
                     }
@@ -27,7 +27,7 @@ struct SetupGuideView: View {
                         VStack(alignment: .leading, spacing: 14) {
                             Label(location.statusTitle, systemImage: "location.circle")
                             Text(UIApplication.shared.backgroundRefreshStatus == .available ? "系统后台刷新可用" : "系统后台刷新受限，后台记录可能中断")
-                            Text("边界防抖需要两次一致位置观测；系统可能延迟投递，重要时间可手动修正。")
+                            Text("前台有效定位立即识别；后台由围栏与访问地点事件记录，重要时间可手动修正。")
                                 .font(.footnote).foregroundStyle(.secondary)
                             if let message = location.statusMessage { Text(message).font(.footnote) }
                             Button("检查系统权限") {
@@ -58,3 +58,4 @@ struct SetupGuideView: View {
         }
     }
 }
+

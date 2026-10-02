@@ -17,16 +17,20 @@ enum JournalError: LocalizedError {
 @MainActor @Observable final class JournalStore {
     private(set) var places: [Place] = []
     private(set) var entries: [JournalEntry] = []
+    private(set) var observations: [LocationObservation] = []
     var errorMessage: String?
     private(set) var undoLabel: String?
     private var undoSnapshot: [EntrySnapshot]?
+    // SwiftData invalidates managed objects when the container is released.
+    // Keep storage alive for every service/view retaining this store.
+    private let container: ModelContainer
     let context: ModelContext
     let isDemo: Bool
     var active: JournalEntry? { entries.first { $0.end == nil } }
     var visiblePlaces: [Place] { places.filter { !$0.archived } }
 
     init(context: ModelContext, isDemo: Bool = false) {
-        self.context = context; self.isDemo = isDemo
+        self.container = context.container; self.context = context; self.isDemo = isDemo
         context.autosaveEnabled = false
         reload()
     }
@@ -34,6 +38,7 @@ enum JournalError: LocalizedError {
         do {
             places = try context.fetch(FetchDescriptor<Place>(sortBy: [SortDescriptor(\Place.createdAt)]))
             entries = try context.fetch(FetchDescriptor<JournalEntry>(sortBy: [SortDescriptor(\JournalEntry.start, order: .reverse)]))
+            observations = (try? context.fetch(FetchDescriptor<LocationObservation>(sortBy: [SortDescriptor(\LocationObservation.receivedAt, order: .reverse)]))) ?? []
         } catch { errorMessage = "读取记录失败：\(error.localizedDescription)" }
     }
     @discardableResult func commit() -> Bool {
@@ -63,6 +68,7 @@ enum JournalError: LocalizedError {
         if existing == nil { context.insert(place) }
         place.name = name; place.kindRaw = kind.rawValue; place.latitude = latitude
         place.longitude = longitude; place.radius = radius; place.address = address
+        place.isDiscovered = false
         return commit()
     }
     func archive(_ place: Place) {
@@ -72,6 +78,7 @@ enum JournalError: LocalizedError {
     func arrive(_ place: Place, at date: Date = .now, source: EntrySource = .automatic) {
         guard !place.archived else { return }
         if let current = active {
+            if source == .automatic && current.source == .manual { return }
             guard date >= current.start else { return }
             if current.kind == .stay && current.placeID == place.id { return }
             current.end = date
@@ -85,7 +92,7 @@ enum JournalError: LocalizedError {
         commit()
     }
     func depart(_ placeID: UUID, at date: Date = .now) {
-        guard let current = active, current.kind == .stay, current.placeID == placeID,
+        guard let current = active, current.kind == .stay, current.placeID == placeID, current.source == .automatic,
               date >= current.start else { return }
         current.end = date
         context.insert(JournalEntry(kind: .travel, placeID: placeID, start: date, source: .automatic))
@@ -106,13 +113,14 @@ enum JournalError: LocalizedError {
         entry.placeID = place.id; entry.start = start; entry.end = end
         entry.kindRaw = kind.rawValue; entry.destinationID = kind == .travel ? destination?.id : nil
         entry.note = note; entry.sourceRaw = EntrySource.manual.rawValue
+        entry.needsReview = false; entry.lastObserved = nil
         return commitUndo(before, label: existing == nil ? "已补记" : "已修改记录")
     }
     func delete(_ entry: JournalEntry) {
         let before = entry.end == nil ? nil : snapshot()
         context.delete(entry); _ = commitUndo(before, label: "已删除记录")
     }
-    func erase() { entries.forEach { context.delete($0) }; places.forEach { context.delete($0) }; commit() }
+    func erase() { entries.forEach { context.delete($0) }; places.forEach { context.delete($0) }; observations.forEach { context.delete($0) }; commit() }
 }
 
 extension JournalStore {
@@ -120,7 +128,7 @@ extension JournalStore {
         entries.filter {
             guard $0.source == .automatic else { return false }
             let duration = ($0.end ?? now).timeIntervalSince($0.start)
-            return duration > ($0.kind == .stay ? 86400 : 14400) ||
+            return $0.needsReview || duration > ($0.kind == .stay ? 86400 : 14400) ||
                 ($0.kind == .travel && $0.end != nil && $0.destinationID == nil)
         }
     }
@@ -149,7 +157,7 @@ extension JournalStore {
     }
     func confirm(_ entry: JournalEntry) {
         // Explicit user verification turns the record into a manually reviewed record.
-        entry.sourceRaw = EntrySource.manual.rawValue; commit()
+        entry.sourceRaw = EntrySource.manual.rawValue; entry.needsReview = false; commit()
     }
 }
 
@@ -163,9 +171,12 @@ private struct EntrySnapshot {
     let end: Date?
     let source: EntrySource
     let note: String
+    let needsReview: Bool
+    let lastObserved: Date?
     init(_ entry: JournalEntry) {
         id = entry.id; kind = entry.kind; placeID = entry.placeID; destinationID = entry.destinationID
         start = entry.start; end = entry.end; source = entry.source; note = entry.note
+        needsReview = entry.needsReview; lastObserved = entry.lastObserved
     }
 }
 
@@ -187,6 +198,7 @@ extension JournalStore {
             if existing[record.id] == nil { context.insert(entry) }
             entry.kindRaw = record.kind.rawValue; entry.placeID = record.placeID; entry.destinationID = record.destinationID
             entry.start = record.start; entry.end = record.end; entry.sourceRaw = record.source.rawValue; entry.note = record.note
+            entry.needsReview = record.needsReview; entry.lastObserved = record.lastObserved
         }
         commit()
     }

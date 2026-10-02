@@ -52,7 +52,8 @@ struct ReviewView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var period: ReviewPeriod = .week
-    @State private var date = Date.now
+    @State private var date: Date
+    init(date: Date = .now) { _date = State(initialValue: date) }
     @State private var poster = false
     @State private var selectedDay: Date?
     private var interval: DateInterval { period.interval(ending: date, earliest: store.entries.last?.start) }
@@ -203,3 +204,4 @@ struct ReviewView: View {
             .onChange(of: date) { _, _ in selectedDay = nil }
     }
 }
+

@@ -9,7 +9,8 @@ private enum TodaySheet: String, Identifiable {
 struct TodayView: View {
     @Environment(JournalStore.self) private var store
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var selectedDate = Date.now
+    @State private var selectedDate: Date
+    init(date: Date = .now) { _selectedDate = State(initialValue: date) }
     @State private var sheet: TodaySheet?
     private var interval: DateInterval { TimeMath.day(selectedDate) }
     var body: some View {
@@ -93,12 +94,12 @@ private struct CurrentCard: View {
         VStack(alignment: .leading, spacing: 20) {
             HStack {
                 Label(location.statusTitle, systemImage: store.active == nil ? "circle" : "record.circle")
-                    .font(.caption.weight(.medium)).foregroundStyle(Theme.accent)
+                    .font(.caption.weight(.medium)).foregroundStyle(Theme.accentText)
                 Spacer()
                 if store.active != nil {
                     Button {
                         if location.enabled { location.setEnabled(false) } else { store.stop() }
-                    } label: { Image(systemName: "pause").frame(width: 44, height: 44) }
+                    } label: { Image(systemName: "pause").frame(width: 44, height: 44).contentShape(Rectangle()) }
                         .accessibilityLabel("暂停记录").buttonStyle(PressStyle())
                 }
             }
@@ -114,13 +115,13 @@ private struct CurrentCard: View {
                     .font(.subheadline).foregroundStyle(Theme.quiet)
             } else {
                 Text("慢慢走，留下生活。").font(.title2.weight(.medium))
-                if !store.isDemo && !store.visiblePlaces.isEmpty {
+                if !store.isDemo {
                     if location.authorization == .denied || location.authorization == .restricted {
                         Button("检查定位权限") {
                             if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                         }.buttonStyle(.bordered).controlSize(.large)
                     } else {
-                        Button(location.enabled ? "刷新位置" : "继续记录") {
+                        Button(location.enabled ? "定位并识别" : "开启自动记录") {
                             if location.enabled { location.locateOnce() } else { location.setEnabled(true) }
                         }.buttonStyle(PrimaryButtonStyle())
                     }
@@ -128,6 +129,12 @@ private struct CurrentCard: View {
             }
             if store.active != nil && !location.enabled && !store.isDemo {
                 Button("继续自动识别") { location.setEnabled(true) }.buttonStyle(.bordered)
+            }
+            if !store.isDemo {
+                NavigationLink { LocationHealthView() } label: {
+                    Label("检查自动记录", systemImage: "location.circle").font(.subheadline).frame(minHeight: 44)
+                }
+                if store.active != nil && location.enabled { Button("定位并识别") { location.locateOnce() }.frame(minHeight: 44) }
             }
             Text(location.statusDetail).font(.footnote).foregroundStyle(Theme.quiet)
         }.padding(24).frame(maxWidth: .infinity, alignment: .leading)
@@ -301,3 +308,4 @@ private enum TimelineDestination: Identifiable {
         }
     }
 }
+

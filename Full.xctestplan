@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "configurations": [
+    {
+      "id": "408f3e2f-03bd-5a9d-887a-fc913600f42e",
+      "name": "Full",
+      "options": {}
+    }
+  ],
+  "defaultOptions": {
+    "systemAttachmentLifetime": "deleteOnSuccess",
+    "userAttachmentLifetime": "keepAlways",
+    "targetForVariableExpansion": {
+      "containerPath": "container:Cichu.xcodeproj",
+      "identifier": "F75109BEB4DD8800DA6B45F8",
+      "name": "Cichu"
+    }
+  },
+  "testTargets": [
+    {
+      "target": {
+        "containerPath": "container:Cichu.xcodeproj",
+        "identifier": "C062A5A4A7F4F37DD90F54CB",
+        "name": "CichuTests"
+      }
+    },
+    {
+      "target": {
+        "containerPath": "container:Cichu.xcodeproj",
+        "identifier": "794AAC98ACE6EB716B86C3A5",
+        "name": "CichuUITests"
+      }
+    }
+  ]
+}

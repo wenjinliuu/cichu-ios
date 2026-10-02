@@ -180,7 +180,7 @@ struct PlaceEditor: View {
                     Button("保存") {
                         guard let coordinate else { return }
                         if store.savePlace(existing: existing, name: name, kind: kind, latitude: coordinate.latitude, longitude: coordinate.longitude, radius: radius, address: address) {
-                            location.refreshRegions(); dismiss()
+                            location.refreshRegions(); if location.enabled { location.locateOnce() }; dismiss()
                         }
                     }.disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || coordinate == nil)
                 }
@@ -268,7 +268,7 @@ struct PlaceDetailView: View {
             }
             .sheet(isPresented: $edit) { PlaceEditor(existing: place) }
             .confirmationDialog("归档后停止监测，历史记录仍会保留。", isPresented: $archive, titleVisibility: .visible) {
-                Button("归档地点", role: .destructive) { store.archive(place); location.refreshRegions(); dismiss() }
+                Button("归档地点", role: .destructive) { store.archive(place); location.refreshRegions(); if location.enabled { location.locateOnce() }; dismiss() }
             }
     }
     @ViewBuilder private var primaryMetrics: some View {
@@ -276,3 +276,4 @@ struct PlaceDetailView: View {
         Metric(title: "到访次数", value: "\(visits.count) 次")
     }
 }
+

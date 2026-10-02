@@ -15,7 +15,7 @@ struct DemoHost: View {
         }.task {
             guard container == nil else { return }
             do {
-                let schema = Schema([Place.self, JournalEntry.self])
+                let schema = Schema([Place.self, JournalEntry.self, LocationObservation.self])
                 let model = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)])
                 try DemoData.populate(model.mainContext)
                 container = model
@@ -52,3 +52,4 @@ enum DemoData {
         try context.save()
     }
 }
+

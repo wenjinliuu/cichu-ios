@@ -1,53 +1,64 @@
 name: TestFlight
-
 on:
+  push:
+    tags: ['v*']
+  workflow_run:
+    workflows: ['Build & Test']
+    branches: [main]
+    types: [completed]
   workflow_dispatch:
     inputs:
-      build_number:
-        description: "Build number (blank: GitHub run number)"
-        type: string
-        required: false
-      marketing_version:
-        description: "Marketing version override (blank: project default)"
-        type: string
-        required: false
       lookup_only:
-        description: "Only verify Apple registration; do not archive or upload"
+        description: 仅核对 Apple 注册
         type: boolean
         default: false
       dry_run:
-        description: "Unsigned archive only; never upload"
+        description: 只跑测试和无签名打包
         type: boolean
         default: false
-  push:
-    tags: ["v*"]
-
+      marketing_version:
+        description: 版本号（留空用工程版本）
+        type: string
+        default: ''
+      build_number:
+        description: 构建号（留空用运行编号）
+        type: string
+        default: ''
 permissions:
   contents: read
-
+  actions: read
+  pull-requests: read
+  issues: write
 concurrency:
-  group: cichu-ios-testflight
+  group: testflight
   cancel-in-progress: false
-
 jobs:
-  release:
-    uses: wenjinliuu/ios-ci-workflows/.github/workflows/testflight-release.yml@1785ec85efe4d88c1a87b5a9125e5ca5125a10ca
+  lookup:
+    # Automatic release is opt-in for this exact, tested main commit, never for arbitrary pushes.
+    if: >-
+      ${{ github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_sha == github.sha &&
+      contains(github.event.workflow_run.head_commit.message, '[release testflight]')) }}
+    uses: wenjinliuu/ios-ci-workflows/.github/workflows/testflight-release.yml@df71d6096d6d39ea799179cb2635703548b07ae0 # v1.1.0
     with:
-      workdir: .
-      project: Cichu.xcodeproj
-      scheme: Cichu
-      bundle_id: com.wenjinliu.cichu
-      sync_command: bash scripts/sync-app-icon.sh
-      generate_command: python3 scripts/generate_project.py
+      lookup_only: true
+    secrets: inherit
+  preflight:
+    needs: lookup
+    if: ${{ !inputs.lookup_only }}
+    uses: wenjinliuu/ios-ci-workflows/.github/workflows/testflight-release.yml@df71d6096d6d39ea799179cb2635703548b07ae0 # v1.1.0
+    with:
+      dry_run: true
+      # Different artifact name from the signed upload in the same run; never sent to Apple.
+      build_number: '900000'
+      marketing_version: ${{ inputs.marketing_version || '' }}
+    secrets: inherit
+  release:
+    needs: [lookup, preflight]
+    if: ${{ !inputs.lookup_only && !inputs.dry_run }}
+    uses: wenjinliuu/ios-ci-workflows/.github/workflows/testflight-release.yml@df71d6096d6d39ea799179cb2635703548b07ae0 # v1.1.0
+    with:
       build_number: ${{ inputs.build_number || '' }}
       marketing_version: ${{ inputs.marketing_version || '' }}
-      lookup_only: ${{ inputs.lookup_only || false }}
-      dry_run: ${{ inputs.dry_run || false }}
-      artifact_prefix: cichu-ios-
-      ci_revision: 1785ec85efe4d88c1a87b5a9125e5ca5125a10ca
-      expected_team_id: F6FB339Y3Z
-    secrets:
-      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-      APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
-      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-      APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+    secrets: inherit

@@ -1,0 +1,23 @@
+workdir: .
+project: Cichu.xcodeproj
+scheme: Cichu
+bundle_id: com.wenjinliu.cichu
+display_name: 此处
+sync_command: bash scripts/sync-app-icon.sh
+generate_command: python3 scripts/generate_project.py
+icon_path: Cichu/Resources/AppIcon.icon
+toolchain:
+  xcode: '26.6'
+  simulator: iPhone 17 Pro
+  ios: '26.4'
+build_test:
+  fast_test_plan: Fast
+  full_test_plan: Full
+  ui_test_target: CichuUITests
+  accessibility_audit: warn
+  commit_recorded_snapshots: true
+testflight:
+  entitlement_mode: none
+  expected_team_id: F6FB339Y3Z
+  artifact_prefix: cichu-ios-
+  acceptance_issue: true

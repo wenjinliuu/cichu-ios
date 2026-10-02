@@ -65,6 +65,16 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "825FFD940DF9E4E610D23F7F";
 		};
+		"6FFCA0CB9BA4DE02524AA7A4" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Cichu/Features/LocationHealthView.swift";
+			"sourceTree" = "<group>";
+		};
+		"2D36A0C0154124B1C42E0068" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "6FFCA0CB9BA4DE02524AA7A4";
+		};
 		"CF3414C8365CD07147CB1874" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -175,6 +185,16 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "0A2A5D0B7DFFAB25A76D502E";
 		};
+		"C98CABFAC89B71D871A3B0A1" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Cichu/Services/LocationDriver.swift";
+			"sourceTree" = "<group>";
+		};
+		"1A776CBD84FFD51F79B47480" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "C98CABFAC89B71D871A3B0A1";
+		};
 		"C7F4996086F0A493ECFB0AF4" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -195,6 +215,16 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "C66EF76CB70F2D5AF8D4DF36";
 		};
+		"2FB5509466E03953E3D8F8D4" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Cichu/Services/VisitReconciliation.swift";
+			"sourceTree" = "<group>";
+		};
+		"8501C22AE9D8D0CEF022FE08" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "2FB5509466E03953E3D8F8D4";
+		};
 		"1962291D172D8B6A6EABC899" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -204,6 +234,26 @@
 		"6ED78660C586A60B39DCF313" = {
 			"isa" = "PBXBuildFile";
 			"fileRef" = "1962291D172D8B6A6EABC899";
+		};
+		"996CB11AE166C34A812ED3D7" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "CichuTests/LocationServiceTests.swift";
+			"sourceTree" = "<group>";
+		};
+		"1110592EE34A27C1451BC79A" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "996CB11AE166C34A812ED3D7";
+		};
+		"2FD627BDF75DAEE6264EB195" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "CichuTests/SnapshotTests.swift";
+			"sourceTree" = "<group>";
+		};
+		"9850058216BABE2DC86494B1" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "2FD627BDF75DAEE6264EB195";
 		};
 		"8FFFCC243357AA562B620369" = {
 			"isa" = "PBXFileReference";
@@ -224,6 +274,26 @@
 		"A44E33EEABC8880E5022A066" = {
 			"isa" = "PBXBuildFile";
 			"fileRef" = "DDB0AE225887768EEBE810FD";
+		};
+		"B064FAFF4C37F358A8B24E2E" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "CichuTests/VisitReconciliationTests.swift";
+			"sourceTree" = "<group>";
+		};
+		"9B96800C78383E1504676D44" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "B064FAFF4C37F358A8B24E2E";
+		};
+		"A6197ED8B6770C7C2961A4F0" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "CichuUITests/KeyFlowTests.swift";
+			"sourceTree" = "<group>";
+		};
+		"4E7A1174DF20FB26F3DDACD9" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "A6197ED8B6770C7C2961A4F0";
 		};
 		"3DA388B13109E4229A87245D" = {
 			"isa" = "PBXFileReference";
@@ -275,11 +345,19 @@
 			"path" = "CichuTests.xctest";
 			"sourceTree" = "BUILT_PRODUCTS_DIR";
 		};
+		"9B7BED31F6F48AD5D908B2BC" = {
+			"isa" = "PBXFileReference";
+			"explicitFileType" = "wrapper.cfbundle";
+			"includeInIndex" = 0;
+			"path" = "CichuUITests.xctest";
+			"sourceTree" = "BUILT_PRODUCTS_DIR";
+		};
 		"FBDC4F23F93125BBEEAE800C" = {
 			"isa" = "PBXGroup";
 			"children" = (
 				"4E783A9E10D2A8ABA38CD11C",
 				"6C7CCDEB3609F1FAA874E941",
+				"9B7BED31F6F48AD5D908B2BC",
 			);
 			"name" = "Products";
 			"sourceTree" = "<group>";
@@ -293,6 +371,7 @@
 				"EC14891DAA572BFC7EE1511F",
 				"4833056B834387CDD0469FCF",
 				"825FFD940DF9E4E610D23F7F",
+				"6FFCA0CB9BA4DE02524AA7A4",
 				"CF3414C8365CD07147CB1874",
 				"2BF2F2495CF8A60DE4CFD7FA",
 				"AB900D4B6248514A2F5ECF02",
@@ -304,8 +383,10 @@
 				"E13A0138F4BBC93FDB8E40EE",
 				"8A4CAE7E5CE367E338FCDFFB",
 				"0A2A5D0B7DFFAB25A76D502E",
+				"C98CABFAC89B71D871A3B0A1",
 				"C7F4996086F0A493ECFB0AF4",
 				"C66EF76CB70F2D5AF8D4DF36",
+				"2FB5509466E03953E3D8F8D4",
 				"3DA388B13109E4229A87245D",
 				"6BCA6AABA2230AA46C47F53D",
 				"2917995C32910C03BF8CCA3D",
@@ -318,10 +399,21 @@
 			"isa" = "PBXGroup";
 			"children" = (
 				"1962291D172D8B6A6EABC899",
+				"996CB11AE166C34A812ED3D7",
+				"2FD627BDF75DAEE6264EB195",
 				"8FFFCC243357AA562B620369",
 				"DDB0AE225887768EEBE810FD",
+				"B064FAFF4C37F358A8B24E2E",
 			);
 			"name" = "CichuTests";
+			"sourceTree" = "<group>";
+		};
+		"0F2612BBE722F8B97292B1A7" = {
+			"isa" = "PBXGroup";
+			"children" = (
+				"A6197ED8B6770C7C2961A4F0",
+			);
+			"name" = "CichuUITests";
 			"sourceTree" = "<group>";
 		};
 		"870B3294C0CBD48AF6BBCC1B" = {
@@ -329,6 +421,7 @@
 			"children" = (
 				"3C3B0F03DC089F93B8457928",
 				"E717C295FF9827DFF805D88B",
+				"0F2612BBE722F8B97292B1A7",
 				"FBDC4F23F93125BBEEAE800C",
 			);
 			"sourceTree" = "<group>";
@@ -343,6 +436,7 @@
 				"41B927342AE2321B75EBE5D9",
 				"3C2F0BFBC2010A49F72092A5",
 				"C987D23C3974D3EFF194F563",
+				"2D36A0C0154124B1C42E0068",
 				"796FDA4754B58B6307312EFA",
 				"D5D965D62194090CB1519CF2",
 				"36123D2CC98F9C8819C454DE",
@@ -354,8 +448,10 @@
 				"0CD7DE454367B51CD3C766CB",
 				"3698B4D7CB4B827F7B2DC39B",
 				"7C4A71DDB27BB249BC08E024",
+				"1A776CBD84FFD51F79B47480",
 				"93FDF96FCC0248894C145652",
 				"749BD963CA9322BC189BDE09",
+				"8501C22AE9D8D0CEF022FE08",
 			);
 			"runOnlyForDeploymentPostprocessing" = 0;
 		};
@@ -381,8 +477,11 @@
 			"buildActionMask" = 2147483647;
 			"files" = (
 				"6ED78660C586A60B39DCF313",
+				"1110592EE34A27C1451BC79A",
+				"9850058216BABE2DC86494B1",
 				"3BECE32E8C398AB3EADC2787",
 				"A44E33EEABC8880E5022A066",
+				"9B96800C78383E1504676D44",
 			);
 			"runOnlyForDeploymentPostprocessing" = 0;
 		};
@@ -451,7 +550,7 @@
 				"SUPPORTED_PLATFORMS" = "iphoneos iphonesimulator";
 				"CODE_SIGN_STYLE" = "Automatic";
 				"CURRENT_PROJECT_VERSION" = "1";
-				"MARKETING_VERSION" = "1.0";
+				"MARKETING_VERSION" = "1.1";
 				"ASSETCATALOG_COMPILER_APPICON_NAME" = "AppIcon";
 				"ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME" = "AccentColor";
 				"LD_RUNPATH_SEARCH_PATHS" = (
@@ -476,7 +575,7 @@
 				"SUPPORTED_PLATFORMS" = "iphoneos iphonesimulator";
 				"CODE_SIGN_STYLE" = "Automatic";
 				"CURRENT_PROJECT_VERSION" = "1";
-				"MARKETING_VERSION" = "1.0";
+				"MARKETING_VERSION" = "1.1";
 				"ASSETCATALOG_COMPILER_APPICON_NAME" = "AppIcon";
 				"ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME" = "AccentColor";
 				"LD_RUNPATH_SEARCH_PATHS" = (
@@ -594,6 +693,83 @@
 			"productReference" = "6C7CCDEB3609F1FAA874E941";
 			"productType" = "com.apple.product-type.bundle.unit-test";
 		};
+		"87847F444E1B99FE213C5044" = {
+			"isa" = "XCBuildConfiguration";
+			"buildSettings" = {
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.wenjinliu.cichu.uitests";
+				"PRODUCT_NAME" = "$(TARGET_NAME)";
+				"GENERATE_INFOPLIST_FILE" = "YES";
+				"TARGETED_DEVICE_FAMILY" = "1,2";
+				"CODE_SIGN_STYLE" = "Automatic";
+				"TEST_TARGET_NAME" = "Cichu";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+				"SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "DEBUG";
+				"ENABLE_TESTABILITY" = "YES";
+			};
+			"name" = "Debug";
+		};
+		"14FFDE5C3B39E38CDA35F13A" = {
+			"isa" = "XCBuildConfiguration";
+			"buildSettings" = {
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.wenjinliu.cichu.uitests";
+				"PRODUCT_NAME" = "$(TARGET_NAME)";
+				"GENERATE_INFOPLIST_FILE" = "YES";
+				"TARGETED_DEVICE_FAMILY" = "1,2";
+				"CODE_SIGN_STYLE" = "Automatic";
+				"TEST_TARGET_NAME" = "Cichu";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-O";
+			};
+			"name" = "Release";
+		};
+		"29BD0E5912E687A2F6C2CACD" = {
+			"isa" = "XCConfigurationList";
+			"buildConfigurations" = (
+				"87847F444E1B99FE213C5044",
+				"14FFDE5C3B39E38CDA35F13A",
+			);
+			"defaultConfigurationIsVisible" = 0;
+			"defaultConfigurationName" = "Release";
+		};
+		"F9ACDEB529017EFC18F5E60A" = {
+			"isa" = "PBXSourcesBuildPhase";
+			"buildActionMask" = 2147483647;
+			"files" = (
+				"4E7A1174DF20FB26F3DDACD9",
+			);
+			"runOnlyForDeploymentPostprocessing" = 0;
+		};
+		"39F831DAFE5A2F37503C83B2" = {
+			"isa" = "PBXFrameworksBuildPhase";
+			"buildActionMask" = 2147483647;
+			"files" = (
+			);
+			"runOnlyForDeploymentPostprocessing" = 0;
+		};
+		"19F0976CA299F93A2DFF5F71" = {
+			"isa" = "PBXResourcesBuildPhase";
+			"buildActionMask" = 2147483647;
+			"files" = (
+			);
+			"runOnlyForDeploymentPostprocessing" = 0;
+		};
+		"794AAC98ACE6EB716B86C3A5" = {
+			"isa" = "PBXNativeTarget";
+			"buildConfigurationList" = "29BD0E5912E687A2F6C2CACD";
+			"buildPhases" = (
+				"F9ACDEB529017EFC18F5E60A",
+				"39F831DAFE5A2F37503C83B2",
+				"19F0976CA299F93A2DFF5F71",
+			);
+			"buildRules" = (
+			);
+			"dependencies" = (
+				"BAE932EF166B50AB877FDC6F",
+			);
+			"name" = "CichuUITests";
+			"productName" = "CichuUITests";
+			"productReference" = "9B7BED31F6F48AD5D908B2BC";
+			"productType" = "com.apple.product-type.bundle.ui-testing";
+		};
 		"98F54143AB4E86B28C3AFEE0" = {
 			"isa" = "PBXProject";
 			"attributes" = {
@@ -625,6 +801,7 @@
 			"targets" = (
 				"F75109BEB4DD8800DA6B45F8",
 				"C062A5A4A7F4F37DD90F54CB",
+				"794AAC98ACE6EB716B86C3A5",
 			);
 		};
 	};

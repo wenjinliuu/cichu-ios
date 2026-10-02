@@ -13,7 +13,7 @@ struct RecordReviewView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(store.title(entry)).font(.headline)
                     Text(entry.start.formatted(date: .abbreviated, time: .shortened)).font(.caption)
-                    Text(entry.kind == .stay ? "持续超过 24 小时，请核对是否漏记离开。" : "移动过长或缺少终点，请核对。")
+                    Text(entry.needsReview ? "定位有中断或延迟，请核对到达与离开时间。" : (entry.kind == .stay ? "持续超过 24 小时，请核对是否漏记离开。" : "移动过长或缺少终点，请核对。"))
                         .font(.subheadline).foregroundStyle(.secondary)
                     AdaptiveRow {
                         Button("查看并修正") { selected = entry }.buttonStyle(.bordered)
@@ -28,3 +28,4 @@ struct RecordReviewView: View {
             .sheet(item: $selected) { EntryDetailView(entry: $0) }
     }
 }
+

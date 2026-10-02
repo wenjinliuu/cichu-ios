@@ -12,11 +12,13 @@
 - 地点识别防抖、异常记录核对、停留拆分与合并
 - 分步权限向导、默认隐藏地点名称的图片分享海报
 
-## 源码状态
+## 开发与验证
 
-已提供首版应用源码与 `Cichu.xcodeproj`。**尚未编译、签名或经过真机验证。** 当前不含自动构建工作流。
+原生 SwiftUI + MapKit + Core Location + SwiftData，本地记录，无账号。1.1 完善前台即时定位、常用地点围栏与访问地点停留记录，浅色采用白底橙色主视觉。
 
-直接打开 `Cichu.xcodeproj`，选择 `Cichu` scheme。后续编译、权限与签名注意事项见 [实现与交接说明](docs/IMPLEMENTATION.md)。
+工作流已接入 [ios-ci-workflows v1.1.0](https://github.com/wenjinliuu/ios-ci-workflows/releases/tag/v1.1.0)：Build & Test、TestFlight、App Icon Preview、Live Preview。统一配置见 `.ios-ci.yml`；测试、快照和签名均在 GitHub Actions 上执行。
+
+最新整改与未实现路线见 [1.1 整顿报告](docs/REBUILD_20261002.md)。旧 [实现记录](docs/IMPLEMENTATION.md) 是历史交付说明，不能代替当前 CI 结果。锁屏、全天后台停留和升级数据保留，需要 TestFlight 真机验收。
 
 ```text
 Cichu/App        应用入口与导航
@@ -38,3 +40,4 @@ CichuTests      数据与时间边界测试（未运行）
 项目名称、App 名称、Logo、图标及品牌资产不因源码许可而获得复用授权。完整许可条款见 [LICENSE](LICENSE)，版权与品牌声明见 [NOTICE](NOTICE)。
 
 界面设计规范、动效参数与静态检查边界见 [DESIGN.md](DESIGN.md)。
+
