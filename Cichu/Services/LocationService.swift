@@ -124,9 +124,9 @@ import UIKit
         for fix in locations.sorted(by: { $0.timestamp < $1.timestamp }) { handleFix(fix) }
     }
     func handleFix(_ fix: CLLocation, now: Date = .now) {
-        guard !store.isDemo, fix.horizontalAccuracy >= 0, abs(fix.timestamp.timeIntervalSince(now)) < 120 else { return }
+        guard !store.isDemo, fix.horizontalAccuracy >= 0, fix.timestamp <= now, now.timeIntervalSince(fix.timestamp) < 120 else { return }
         coordinate = fix.coordinate; lastFixAt = fix.timestamp; statusMessage = nil
-        guard enabled else { return }
+        guard enabled, accuracyAuthorization == .fullAccuracy else { return }
         let activePlace = store.active?.kind == .stay ? store.place(store.active?.placeID) : nil
         let evidence = LocationResolver.resolve(fix, places: store.visiblePlaces, active: activePlace, explicit: explicitFix)
         explicitFix = false
@@ -134,7 +134,7 @@ import UIKit
         case .inside(let id):
             guard let place = store.place(id) else { return }
             store.arrive(place, at: max(trackingSince ?? fix.timestamp, fix.timestamp))
-            store.active?.lastObserved = fix.timestamp; store.commit(); lastEventAt = now
+            if store.active?.placeID == id { store.active?.lastObserved = fix.timestamp; store.commit(); lastEventAt = now }
         case .outside(let id):
             if let active = store.active, let previous = active.lastObserved, now.timeIntervalSince(previous) > 1800 { active.needsReview = true }
             store.depart(id, at: max(store.active?.start ?? fix.timestamp, fix.timestamp)); lastEventAt = now
@@ -158,7 +158,10 @@ import UIKit
                 if distance < old.radius + place.radius { requestFix(); return }
             }
             store.arrive(place, at: date); store.active?.lastObserved = date; store.commit()
-        } else { store.depart(id, at: date) }
+        } else {
+            if let active = store.active, active.source == .automatic, active.placeID == id, active.lastObserved == nil || date.timeIntervalSince(active.lastObserved!) > 1800 { active.needsReview = true }
+            store.depart(id, at: date)
+        }
         lastEventAt = date; requestFix()
     }
     func locationManager(_ manager: CLLocationManager, didVisit visit: CLVisit) {

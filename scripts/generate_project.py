@@ -2,6 +2,7 @@
 """Generate a deterministic Xcode project using only Python stdlib; does not build."""
 import hashlib
 import json
+import uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -77,7 +78,7 @@ def reference(identifier,name): return f'<BuildableReference BuildableIdentifier
 (schemes/'Cichu.xcscheme').write_text(f'''<?xml version="1.0" encoding="UTF-8"?>
 <Scheme LastUpgradeVersion="1600" version="1.3">
  <BuildAction parallelizeBuildables="YES" buildImplicitDependencies="YES"><BuildActionEntries><BuildActionEntry buildForTesting="YES" buildForRunning="YES" buildForProfiling="YES" buildForArchiving="YES" buildForAnalyzing="YES">{reference(app_target,'Cichu.app')}</BuildActionEntry></BuildActionEntries></BuildAction>
- <TestAction buildConfiguration="Debug" selectedDebuggerIdentifier="Xcode.DebuggerFoundation.Debugger.LLDB" selectedLauncherIdentifier="Xcode.IDEFoundation.Launcher.LLDB" shouldUseLaunchSchemeArgsEnv="YES"><TestPlans><TestPlanReference reference="container:Fast.xctestplan"/><TestPlanReference reference="container:Full.xctestplan" default="YES"/></TestPlans><Testables><TestableReference skipped="NO">{reference(test_target,'CichuTests.xctest')}</TestableReference><TestableReference skipped="NO">{reference(ui_target,'CichuUITests.xctest')}</TestableReference></Testables></TestAction>
+ <TestAction buildConfiguration="Debug" selectedDebuggerIdentifier="Xcode.DebuggerFoundation.Debugger.LLDB" selectedLauncherIdentifier="Xcode.IDEFoundation.Launcher.LLDB" shouldUseLaunchSchemeArgsEnv="YES"><TestPlans><TestPlanReference reference="container:Fast.xctestplan"/><TestPlanReference reference="container:Full.xctestplan" default="YES"/></TestPlans></TestAction>
  <LaunchAction buildConfiguration="Debug" selectedDebuggerIdentifier="Xcode.DebuggerFoundation.Debugger.LLDB" selectedLauncherIdentifier="Xcode.IDEFoundation.Launcher.LLDB" launchStyle="0" useCustomWorkingDirectory="NO" ignoresPersistentStateOnLaunch="NO" debugDocumentVersioning="YES" debugServiceExtension="internal" allowLocationSimulation="YES"><BuildableProductRunnable runnableDebuggingMode="0">{reference(app_target,'Cichu.app')}</BuildableProductRunnable></LaunchAction>
  <ProfileAction buildConfiguration="Release" shouldUseLaunchSchemeArgsEnv="YES" savedToolIdentifier="" useCustomWorkingDirectory="NO" debugDocumentVersioning="YES"><BuildableProductRunnable runnableDebuggingMode="0">{reference(app_target,'Cichu.app')}</BuildableProductRunnable></ProfileAction>
  <AnalyzeAction buildConfiguration="Debug"/><ArchiveAction buildConfiguration="Release" revealArchiveInOrganizer="YES"/>
@@ -86,5 +87,5 @@ print(f'Generated project with {len(source_builds)} Swift source files and {len(
 
 
 for name, targets in [('Fast', [(test_target, 'CichuTests')]), ('Full', [(test_target, 'CichuTests'), (ui_target, 'CichuUITests')])]:
-    plan = {'version': 1, 'configurations': [{'id': oid('plan:' + name), 'name': name, 'options': {}}], 'defaultOptions': {'systemAttachmentLifetime': 'deleteOnSuccess', 'userAttachmentLifetime': 'keepAlways'}, 'testTargets': [{'target': {'containerPath': 'container:Cichu.xcodeproj', 'identifier': identifier, 'name': target}} for identifier, target in targets]}
+    plan = {'version': 1, 'configurations': [{'id': str(uuid.uuid5(uuid.NAMESPACE_URL, 'cichu-plan:' + name)), 'name': name, 'options': {}}], 'defaultOptions': {'systemAttachmentLifetime': 'deleteOnSuccess', 'userAttachmentLifetime': 'keepAlways', 'targetForVariableExpansion': {'containerPath': 'container:Cichu.xcodeproj', 'identifier': app_target, 'name': 'Cichu'}}, 'testTargets': [{'target': {'containerPath': 'container:Cichu.xcodeproj', 'identifier': identifier, 'name': target}} for identifier, target in targets]}
     (ROOT / (name + '.xctestplan')).write_text(json.dumps(plan, indent=2) + '\n')

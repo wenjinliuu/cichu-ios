@@ -17,6 +17,8 @@ import CoreLocation
         XCTAssertEqual(total, 5400)
         store.reconcileVisit(place, arrival: start, departure: end, key: "visit-1", receivedAt: now)
         XCTAssertEqual(store.entries.count, 2); XCTAssertEqual(store.observations.count, 1)
+        store.reconcileVisit(place, arrival: start, departure: nil, key: "late-arrival", receivedAt: now)
+        XCTAssertEqual(store.active?.kind, .travel); XCTAssertEqual(store.entries.count, 2)
         _ = container
     }
     func testManualIntervalAndMissingArrivalAreNotInventedOrOverwritten() throws {

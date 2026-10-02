@@ -14,10 +14,13 @@ extension JournalStore {
         }
         guard let start = arrival else {
             if let end = departure, let current = active, current.kind == .stay, current.placeID == place.id, current.source == .automatic, end >= current.start {
-                current.lastObserved = end; depart(place.id, at: end); finish("closed-known-arrival")
+                current.lastObserved = end; current.end = end
+                let travel = JournalEntry(kind: .travel, placeID: place.id, start: end, source: .automatic)
+                travel.lastObserved = end; context.insert(travel); finish("closed-known-arrival")
             } else { finish("missing-arrival") }
             return
         }
+        if departure == nil, observations.contains(where: { $0.placeID == place.id && $0.arrival == start && $0.departure != nil }) { finish("arrival-after-departure"); return }
         let end = departure ?? receivedAt
         guard start <= receivedAt, end <= receivedAt, end >= start else { finish("invalid-time"); return }
         let affected = entries.filter { $0.start < (departure ?? .distantFuture) && ($0.end ?? .distantFuture) > start }

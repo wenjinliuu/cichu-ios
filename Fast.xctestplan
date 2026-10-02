@@ -2,14 +2,19 @@
   "version": 1,
   "configurations": [
     {
-      "id": "AEF9A7351C432E7AE9DC0BAA",
+      "id": "99bf052d-3ee4-529e-877d-9b7a8df6b4bb",
       "name": "Fast",
       "options": {}
     }
   ],
   "defaultOptions": {
     "systemAttachmentLifetime": "deleteOnSuccess",
-    "userAttachmentLifetime": "keepAlways"
+    "userAttachmentLifetime": "keepAlways",
+    "targetForVariableExpansion": {
+      "containerPath": "container:Cichu.xcodeproj",
+      "identifier": "F75109BEB4DD8800DA6B45F8",
+      "name": "Cichu"
+    }
   },
   "testTargets": [
     {

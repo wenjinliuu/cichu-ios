@@ -1,50 +1,64 @@
 name: TestFlight
-
 on:
   push:
     tags: ['v*']
+  workflow_run:
+    workflows: ['Build & Test']
     branches: [main]
-    paths: ['.github/testflight-release.json']
+    types: [completed]
   workflow_dispatch:
     inputs:
       lookup_only:
-        description: 只核对 Apple 注册（Bundle ID、App），不打包
+        description: 仅核对 Apple 注册
         type: boolean
         default: false
       dry_run:
-        description: 跑测试并打包，但不签名不上传
+        description: 只跑测试和无签名打包
         type: boolean
         default: false
       marketing_version:
-        description: 版本号（留空用工程里的）
+        description: 版本号（留空用工程版本）
         type: string
         default: ''
       build_number:
         description: 构建号（留空用运行编号）
         type: string
         default: ''
-
 permissions:
   contents: read
-  issues: write     # 开发版验收 Issue；testflight.acceptance_issue 为 false 时可去掉
-  actions: read     # 查这个提交已通过的快线和慢线，复用结果；去掉则每次现场跑全部测试
+  actions: read
   pull-requests: read
-
+  issues: write
 concurrency:
   group: testflight
   cancel-in-progress: false
-
 jobs:
-  release:
+  lookup:
+    # Automatic release is opt-in for this exact, tested main commit, never for arbitrary pushes.
+    if: >-
+      ${{ github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_sha == github.sha &&
+      contains(github.event.workflow_run.head_commit.message, '[release testflight]')) }}
     uses: wenjinliuu/ios-ci-workflows/.github/workflows/testflight-release.yml@df71d6096d6d39ea799179cb2635703548b07ae0 # v1.1.0
     with:
-      lookup_only: ${{ inputs.lookup_only || false }}
-      dry_run: ${{ inputs.dry_run || false }}
-      marketing_version: ${{ inputs.marketing_version || '1.1' }}
-      build_number: ${{ inputs.build_number || '1020201' }}
-    secrets:
-      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-      APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
-      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-      APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
-
+      lookup_only: true
+    secrets: inherit
+  preflight:
+    needs: lookup
+    if: ${{ !inputs.lookup_only }}
+    uses: wenjinliuu/ios-ci-workflows/.github/workflows/testflight-release.yml@df71d6096d6d39ea799179cb2635703548b07ae0 # v1.1.0
+    with:
+      dry_run: true
+      # Different artifact name from the signed upload in the same run; never sent to Apple.
+      build_number: '900000'
+      marketing_version: ${{ inputs.marketing_version || '' }}
+    secrets: inherit
+  release:
+    needs: [lookup, preflight]
+    if: ${{ !inputs.lookup_only && !inputs.dry_run }}
+    uses: wenjinliuu/ios-ci-workflows/.github/workflows/testflight-release.yml@df71d6096d6d39ea799179cb2635703548b07ae0 # v1.1.0
+    with:
+      build_number: ${{ inputs.build_number || '' }}
+      marketing_version: ${{ inputs.marketing_version || '' }}
+    secrets: inherit
