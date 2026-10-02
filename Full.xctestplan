@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "configurations": [
+    {
+      "id": "C3C574B5FAD0A3341996F67B",
+      "name": "Full",
+      "options": {}
+    }
+  ],
+  "defaultOptions": {
+    "systemAttachmentLifetime": "deleteOnSuccess",
+    "userAttachmentLifetime": "keepAlways"
+  },
+  "testTargets": [
+    {
+      "target": {
+        "containerPath": "container:Cichu.xcodeproj",
+        "identifier": "C062A5A4A7F4F37DD90F54CB",
+        "name": "CichuTests"
+      }
+    },
+    {
+      "target": {
+        "containerPath": "container:Cichu.xcodeproj",
+        "identifier": "794AAC98ACE6EB716B86C3A5",
+        "name": "CichuUITests"
+      }
+    }
+  ]
+}

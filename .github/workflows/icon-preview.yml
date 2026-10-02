@@ -1,30 +1,11 @@
 name: App Icon Preview
-
 on:
   push:
     branches: [main]
-    paths:
-      - "DesignAssets/AppIcon/**"
-      - "Cichu/Resources/AppIcon.icon/**"
-      - "scripts/generate_project.py"
-      - "scripts/sync-app-icon.sh"
-      - ".github/workflows/icon-preview.yml"
+    paths: ['DesignAssets/AppIcon/**', 'Cichu/Resources/AppIcon.icon/**']
   workflow_dispatch:
-
 permissions:
   contents: read
-
-concurrency:
-  group: app-icon-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   icon:
-    uses: wenjinliuu/ios-ci-workflows/.github/workflows/app-icon.yml@1785ec85efe4d88c1a87b5a9125e5ca5125a10ca
-    with:
-      workdir: .
-      project: Cichu.xcodeproj
-      scheme: Cichu
-      icon_path: Cichu/Resources/AppIcon.icon
-      sync_command: bash scripts/sync-app-icon.sh
-      generate_command: python3 scripts/generate_project.py
+    uses: wenjinliuu/ios-ci-workflows/.github/workflows/app-icon.yml@df71d6096d6d39ea799179cb2635703548b07ae0 # v1.1.0

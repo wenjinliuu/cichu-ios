@@ -30,6 +30,7 @@ enum PlaceKind: String, Codable, CaseIterable, Identifiable {
     var address: String
     var archived: Bool
     var createdAt: Date
+    var isDiscovered: Bool = false
     var kind: PlaceKind { PlaceKind(rawValue: kindRaw) ?? .other }
     var coordinate: CLLocationCoordinate2D { .init(latitude: latitude, longitude: longitude) }
     init(id: UUID = UUID(), name: String, kind: PlaceKind, latitude: Double,
@@ -52,6 +53,8 @@ enum EntrySource: String, Codable { case automatic, manual }
     var end: Date?
     var sourceRaw: String
     var note: String
+    var needsReview: Bool = false
+    var lastObserved: Date?
     var kind: EntryKind { EntryKind(rawValue: kindRaw) ?? .stay }
     var source: EntrySource { EntrySource(rawValue: sourceRaw) ?? .manual }
     init(id: UUID = UUID(), kind: EntryKind, placeID: UUID?, destinationID: UUID? = nil,
@@ -62,6 +65,20 @@ enum EntrySource: String, Codable { case automatic, manual }
     }
     func duration(in interval: DateInterval, now: Date = .now) -> TimeInterval {
         TimeMath.overlap(start: start, end: end ?? now, interval: interval)
+    }
+}
+
+/// Durable visit evidence, including rejected events, survives suspension and relaunch.
+@Model final class LocationObservation {
+    @Attribute(.unique) var key: String
+    var placeID: UUID
+    var arrival: Date?
+    var departure: Date?
+    var receivedAt: Date
+    var result: String
+    init(key: String, placeID: UUID, arrival: Date?, departure: Date?, receivedAt: Date, result: String = "") {
+        self.key = key; self.placeID = placeID; self.arrival = arrival; self.departure = departure
+        self.receivedAt = receivedAt; self.result = result
     }
 }
 

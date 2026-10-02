@@ -87,6 +87,7 @@ struct EntryDetailView: View {
                     LabeledContent("开始", value: entry.start.formatted(date: .abbreviated, time: .shortened))
                     LabeledContent("结束", value: entry.end?.formatted(date: .abbreviated, time: .shortened) ?? "正在记录")
                     LabeledContent("来源", value: entry.source == .automatic ? "自动识别（可能有延迟）" : "手动记录")
+                    if entry.needsReview { Label("定位有中断或延迟，请核对这段时间", systemImage: "exclamationmark.circle").foregroundStyle(Theme.accentText) }
                     if !entry.note.isEmpty { Text(entry.note) }
                 }
                 if entry.end == nil {
@@ -126,3 +127,4 @@ struct EntryDetailView: View {
         }
     }
 }
+

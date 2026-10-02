@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "configurations": [
+    {
+      "id": "AEF9A7351C432E7AE9DC0BAA",
+      "name": "Fast",
+      "options": {}
+    }
+  ],
+  "defaultOptions": {
+    "systemAttachmentLifetime": "deleteOnSuccess",
+    "userAttachmentLifetime": "keepAlways"
+  },
+  "testTargets": [
+    {
+      "target": {
+        "containerPath": "container:Cichu.xcodeproj",
+        "identifier": "C062A5A4A7F4F37DD90F54CB",
+        "name": "CichuTests"
+      }
+    }
+  ]
+}

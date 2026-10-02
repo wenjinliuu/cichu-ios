@@ -34,7 +34,7 @@ struct SettingsView: View {
                     if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                 }.disabled(store.isDemo)
                 DisclosureGroup("记录与权限说明") {
-                    Text("后台识别建议允许始终定位及精确位置。省电、信号和强制退出可能中断记录；重要时间可手动调整。暂停会结束当前停留，暂停期间不计入通勤。")
+                    Text("全天自动记录需要始终允许定位和精确位置。省电、信号和强制退出可能中断记录；重要时间可手动调整。暂停会结束当前停留，暂停期间不计入通勤。")
                         .font(.footnote).foregroundStyle(Theme.quiet)
                 }
             } header: { Text("记录") }
@@ -56,6 +56,7 @@ struct SettingsView: View {
                 Text("备份包含地点坐标，请妥善保管。仅空数据库可恢复；卸载前请备份。")
             }
             Section("开始与检查") {
+                NavigationLink("自动记录检查") { LocationHealthView() }.accessibilityIdentifier("settings.location-health")
                 NavigationLink("记录设置向导") { SetupGuideView() }
                 NavigationLink("核对异常记录") { RecordReviewView() }
             }
@@ -64,7 +65,7 @@ struct SettingsView: View {
                     Label("隐私说明", systemImage: "lock.shield")
                 }
                 if !store.isDemo { Button("体验示例数据", systemImage: "sparkles") { demo = true } }
-                LabeledContent("版本", value: "1.0 · 初始版本")
+                LabeledContent("版本", value: "1.1 · 自动停留记录")
             }
             Section { Button("清空本机全部记录", role: .destructive) { erase = true } }
         }.navigationTitle("设置").scrollContentBackground(.hidden).pageCanvas()
@@ -103,3 +104,4 @@ private struct PrivacyView: View {
         }.navigationTitle("隐私说明")
     }
 }
+

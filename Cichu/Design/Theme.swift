@@ -2,6 +2,7 @@ import SwiftUI
 
 enum Theme {
     static let accent = Color("AccentColor")
+    static let accentText = Color("AccentText")
     static let background = Color("Canvas")
     static let surface = Color("Surface")
     static let ink = Color("Ink")
@@ -91,7 +92,7 @@ struct EmptyCard: View {
     let symbol: String
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Image(systemName: symbol).font(.title2).foregroundStyle(Theme.accent).accessibilityHidden(true)
+            Image(systemName: symbol).font(.title2).foregroundStyle(Theme.accentText).accessibilityHidden(true)
             Text(title).font(.headline)
             Text(message).foregroundStyle(Theme.quiet).font(.subheadline).fixedSize(horizontal: false, vertical: true)
         }.padding(.vertical, 20).frame(maxWidth: .infinity, alignment: .leading)
@@ -128,7 +129,7 @@ struct PrimaryButtonStyle: ButtonStyle {
         configuration.label.font(.body.weight(.semibold))
             .padding(.horizontal, 20).padding(.vertical, 12).frame(minHeight: 48)
             .foregroundStyle(Theme.onAccent)
-            .background(Theme.accent, in: RoundedRectangle(cornerRadius: 16))
+            .background(Theme.brand, in: RoundedRectangle(cornerRadius: 16))
             .opacity(enabled ? (configuration.isPressed ? 0.8 : 1) : 0.45)
             .scaleEffect(configuration.isPressed && !reduceMotion ? 0.985 : 1)
             .animation(reduceMotion ? nil : Motion.press, value: configuration.isPressed)
@@ -158,3 +159,4 @@ private struct UndoNotice: View {
 extension View {
     func undoNotice() -> some View { safeAreaInset(edge: .bottom, spacing: 0) { UndoNotice() } }
 }
+

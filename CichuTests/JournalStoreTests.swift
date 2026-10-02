@@ -4,7 +4,7 @@ import SwiftData
 
 @MainActor final class JournalStoreTests: XCTestCase {
     private func makeStore() throws -> (ModelContainer, JournalStore) {
-        let schema = Schema([Place.self, JournalEntry.self])
+        let schema = Schema([Place.self, JournalEntry.self, LocationObservation.self])
         let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)])
         return (container, JournalStore(context: container.mainContext))
     }
@@ -111,3 +111,4 @@ import SwiftData
         XCTAssertEqual(store.visitedPlaces(in: DateInterval(start: start, duration: 1200)).map(\.id), [home.id])
     }
 }
+

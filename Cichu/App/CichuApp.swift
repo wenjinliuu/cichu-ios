@@ -27,9 +27,11 @@ import SwiftData
     override init() {
         super.init()
         do {
-            let schema = Schema([Place.self, JournalEntry.self])
-            let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, cloudKitDatabase: .none)])
-            let store = JournalStore(context: container.mainContext)
+            let schema = Schema([Place.self, JournalEntry.self, LocationObservation.self])
+            let testing = ProcessInfo.processInfo.arguments.contains("--ui-testing")
+            let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: testing, cloudKitDatabase: .none)])
+            if testing { try DemoData.populate(container.mainContext) }
+            let store = JournalStore(context: container.mainContext, isDemo: testing)
             self.container = container; self.store = store
             location = LocationService(store: store)
         } catch {
@@ -58,13 +60,14 @@ struct AppHost: View {
     }
     var body: some View {
         RootView().environment(store).environment(location)
-            .tint(Theme.accent)
+            .tint(Theme.accentText)
             .preferredColorScheme(appearance == "dark" ? .dark : appearance == "light" ? .light : nil)
             .onChange(of: phase) { _, phase in
-                if phase == .active { store.reload(); location.refreshRegions() }
+                if phase == .active { store.reload(); location.resumeForeground() }
             }
             .alert("未能完成操作", isPresented: Binding(get: { store.errorMessage != nil }, set: { if !$0 { store.errorMessage = nil } })) {
                 Button("知道了") { store.errorMessage = nil }
             } message: { Text(store.errorMessage ?? "") }
     }
 }
+

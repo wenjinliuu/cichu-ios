@@ -9,7 +9,7 @@ private enum PreviewFixture { case typical, empty, longNames, travelOnly }
     let store: JournalStore
     let location: LocationService
     init(fixture: PreviewFixture) throws {
-        let schema = Schema([Place.self, JournalEntry.self])
+        let schema = Schema([Place.self, JournalEntry.self, LocationObservation.self])
         container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)])
         if fixture == .travelOnly {
             container.mainContext.insert(JournalEntry(kind: .travel, placeID: nil,
@@ -70,3 +70,4 @@ private struct DesignPreview: View {
 #Preview("地图 · 长名称与大字体") {
     DesignPreview(screen: .places, fixture: .longNames).dynamicTypeSize(.accessibility3)
 }
+
