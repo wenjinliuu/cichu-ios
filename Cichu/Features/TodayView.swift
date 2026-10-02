@@ -99,7 +99,7 @@ private struct CurrentCard: View {
                 if store.active != nil {
                     Button {
                         if location.enabled { location.setEnabled(false) } else { store.stop() }
-                    } label: { Image(systemName: "pause").frame(width: 44, height: 44) }
+                    } label: { Image(systemName: "pause").frame(width: 44, height: 44).contentShape(Rectangle()) }
                         .accessibilityLabel("暂停记录").buttonStyle(PressStyle())
                 }
             }
