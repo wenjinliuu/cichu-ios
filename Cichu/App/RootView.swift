@@ -17,7 +17,7 @@ struct RootView: View {
             if store.isDemo {
                 HStack {
                     Label("示例体验 · 不保存到你的记录", systemImage: "sparkles").font(.caption)
-                    Spacer(); Button("退出") { dismiss() }.font(.subheadline.bold()).frame(minHeight: 44)
+                    Spacer(); Button("退出") { dismiss() }.font(.subheadline.bold()).frame(minWidth: 44, minHeight: 44)
                 }.padding(.horizontal).background(Theme.surface)
             }
         }
@@ -57,3 +57,4 @@ struct WelcomeView: View {
             .fullScreenCover(isPresented: $demo) { DemoHost() }
     }
 }
+

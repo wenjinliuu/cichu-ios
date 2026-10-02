@@ -28,9 +28,10 @@ import SwiftData
         super.init()
         do {
             let schema = Schema([Place.self, JournalEntry.self, LocationObservation.self])
-            let testing = ProcessInfo.processInfo.arguments.contains("--ui-testing")
+            let uiTesting = ProcessInfo.processInfo.arguments.contains("--ui-testing")
+            let testing = uiTesting || ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
             let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: testing, cloudKitDatabase: .none)])
-            if testing { try DemoData.populate(container.mainContext) }
+            if uiTesting { try DemoData.populate(container.mainContext) }
             let store = JournalStore(context: container.mainContext, isDemo: testing)
             self.container = container; self.store = store
             location = LocationService(store: store)

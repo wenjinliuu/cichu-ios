@@ -3,7 +3,7 @@ import Observation
 import UIKit
 
 /// Persist system events during their wake window; don't depend on a background timer.
-@MainActor @Observable final class LocationService: NSObject, CLLocationManagerDelegate {
+@MainActor @Observable final class LocationService: NSObject, @preconcurrency CLLocationManagerDelegate {
     private let driver: LocationDriving
     private let store: JournalStore
     private let defaults: UserDefaults

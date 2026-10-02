@@ -23,7 +23,7 @@ import SwiftData
         let controller = UIHostingController(rootView: view.environment(\.colorScheme, scheme).environment(\.locale, Locale(identifier: "zh_CN")).tint(Theme.accentText))
         let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
         window.rootViewController = controller; window.makeKeyAndVisible()
-        defer { window.isHidden = true }
+        defer { window.isHidden = true; window.rootViewController = nil; controller.view.removeFromSuperview() }
         controller.view.frame = window.bounds; controller.view.setNeedsLayout(); controller.view.layoutIfNeeded()
         let format = UIGraphicsImageRendererFormat(); format.scale = 1; format.opaque = true
         let image = UIGraphicsImageRenderer(bounds: window.bounds, format: format).image { _ in controller.view.drawHierarchy(in: window.bounds, afterScreenUpdates: true) }

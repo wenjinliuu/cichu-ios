@@ -21,13 +21,16 @@ enum JournalError: LocalizedError {
     var errorMessage: String?
     private(set) var undoLabel: String?
     private var undoSnapshot: [EntrySnapshot]?
+    // SwiftData invalidates managed objects when the container is released.
+    // Keep storage alive for every service/view retaining this store.
+    private let container: ModelContainer
     let context: ModelContext
     let isDemo: Bool
     var active: JournalEntry? { entries.first { $0.end == nil } }
     var visiblePlaces: [Place] { places.filter { !$0.archived } }
 
     init(context: ModelContext, isDemo: Bool = false) {
-        self.context = context; self.isDemo = isDemo
+        self.container = context.container; self.context = context; self.isDemo = isDemo
         context.autosaveEnabled = false
         reload()
     }
