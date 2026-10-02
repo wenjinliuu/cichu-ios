@@ -5,21 +5,35 @@ final class KeyFlowTests: XCTestCase {
         let app = XCUIApplication(); app.launchArguments = ["--ui-testing"]
         app.launch()
         XCTAssertTrue(app.tabBars.buttons["今日"].waitForExistence(timeout: 15))
-        capture(app, "today"); try audit(app, page: "今日")
+        capture(app, "today")
         app.tabBars.buttons["回顾"].tap()
         XCTAssertTrue(app.staticTexts["时间，都留在这里。"].waitForExistence(timeout: 5) || app.navigationBars["回顾"].waitForExistence(timeout: 5))
-        capture(app, "review"); try audit(app, page: "回顾")
+        capture(app, "review")
         app.tabBars.buttons["地点"].tap()
         XCTAssertTrue(app.navigationBars["地点"].waitForExistence(timeout: 5))
-        capture(app, "places"); try audit(app, page: "地点")
+        capture(app, "places")
         app.tabBars.buttons["设置"].tap()
-        capture(app, "settings"); try audit(app, page: "设置")
+        capture(app, "settings")
         let health = app.buttons["settings.location-health"]
         for _ in 0..<4 where !health.isHittable { app.swipeUp() }
         XCTAssertTrue(health.waitForExistence(timeout: 5)); health.tap()
         XCTAssertTrue(app.navigationBars["自动记录检查"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["location.refresh"].exists)
         capture(app, "location-health")
+    }
+    // Audit failures remain warnings in central CI, while the separate flow test blocks
+    // publication on any broken navigation or missing control.
+    func testAccessibilityAuditMainScreens() throws {
+        let app = XCUIApplication(); app.launchArguments = ["--ui-testing"]; app.launch()
+        XCTAssertTrue(app.tabBars.buttons["今日"].waitForExistence(timeout: 15))
+        for page in ["今日", "回顾", "地点", "设置"] {
+            app.tabBars.buttons[page].tap()
+            try audit(app, page: page)
+        }
+        let health = app.buttons["settings.location-health"]
+        for _ in 0..<4 where !health.isHittable { app.swipeUp() }
+        XCTAssertTrue(health.waitForExistence(timeout: 5)); health.tap()
+        XCTAssertTrue(app.navigationBars["自动记录检查"].waitForExistence(timeout: 5))
         try audit(app, page: "自动记录检查")
     }
     private func audit(_ app: XCUIApplication, page: String) throws {
